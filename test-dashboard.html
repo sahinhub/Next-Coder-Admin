@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 3px; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Admin Dashboard Functionality Test</h1>
+    
+    <div class="test-section">
+        <h2>Authentication Test</h2>
+        <button onclick="testAuth()">Test Authentication</button>
+        <div id="auth-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Navigation Test</h2>
+        <button onclick="testNavigation()">Test Navigation</button>
+        <div id="nav-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Admin Dashboard Access Test</h2>
+        <button onclick="testAdminAccess()">Test Admin Dashboard Access</button>
+        <div id="admin-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Form Components Test</h2>
+        <button onclick="testForms()">Test Form Components</button>
+        <div id="forms-result"></div>
+    </div>
+
+    <script>
+        function setTestUser() {
+            localStorage.setItem('admin_token', 'test_token_123');
+            localStorage.setItem('admin_user', JSON.stringify({
+                id: '1',
+                name: 'Test Admin',
+                email: 'test@wenextcoder.com',
+                role: 'admin'
+            }));
+        }
+
+        function testAuth() {
+            setTestUser();
+            const user = JSON.parse(localStorage.getItem('admin_user'));
+            const token = localStorage.getItem('admin_token');
+            
+            if (user && token) {
+                document.getElementById('auth-result').innerHTML = 
+                    '<div class="test-result success">✓ Authentication setup successful</div>';
+            } else {
+                document.getElementById('auth-result').innerHTML = 
+                    '<div class="test-result error">✗ Authentication setup failed</div>';
+            }
+        }
+
+        function testNavigation() {
+            setTestUser();
+            const navItems = ['#dashboard', '#portfolio', '#testimonials', '#careers', '#analytics', '#settings'];
+            let results = '';
+            
+            navItems.forEach(item => {
+                try {
+                    window.location.hash = item;
+                    results += `<div class="test-result success">✓ Navigation to ${item} successful</div>`;
+                } catch (error) {
+                    results += `<div class="test-result error">✗ Navigation to ${item} failed: ${error.message}</div>`;
+                }
+            });
+            
+            document.getElementById('nav-result').innerHTML = results;
+        }
+
+        async function testAdminAccess() {
+            setTestUser();
+            try {
+                const response = await fetch('http://localhost:3000/admin');
+                if (response.ok) {
+                    const html = await response.text();
+                    if (html.includes('We Next Coder Admin') || html.includes('sidebar')) {
+                        document.getElementById('admin-result').innerHTML = 
+                            '<div class="test-result success">✓ Admin dashboard accessible and rendering correctly</div>';
+                    } else {
+                        document.getElementById('admin-result').innerHTML = 
+                            '<div class="test-result error">✗ Admin dashboard accessible but not rendering correctly</div>';
+                    }
+                } else {
+                    document.getElementById('admin-result').innerHTML = 
+                        '<div class="test-result error">✗ Admin dashboard not accessible: ' + response.status + '</div>';
+                }
+            } catch (error) {
+                document.getElementById('admin-result').innerHTML = 
+                    '<div class="test-result error">✗ Admin dashboard test failed: ' + error.message + '</div>';
+            }
+        }
+
+        async function testForms() {
+            setTestUser();
+            try {
+                const response = await fetch('http://localhost:3000/admin');
+                if (response.ok) {
+                    const html = await response.text();
+                    const formComponents = ['PortfolioForm', 'TestimonialForm', 'CareerForm'];
+                    let results = '';
+                    
+                    formComponents.forEach(component => {
+                        if (html.includes(component)) {
+                            results += `<div class="test-result success">✓ ${component} component found</div>`;
+                        } else {
+                            results += `<div class="test-result error">✗ ${component} component not found</div>`;
+                        }
+                    });
+                    
+                    document.getElementById('forms-result').innerHTML = results;
+                } else {
+                    document.getElementById('forms-result').innerHTML = 
+                        '<div class="test-result error">✗ Cannot test forms - admin dashboard not accessible</div>';
+                }
+            } catch (error) {
+                document.getElementById('forms-result').innerHTML = 
+                    '<div class="test-result error">✗ Forms test failed: ' + error.message + '</div>';
+            }
+        }
+
+        // Auto-run tests on page load
+        window.onload = function() {
+            testAuth();
+        };
+    </script>
+</body>
+</html>

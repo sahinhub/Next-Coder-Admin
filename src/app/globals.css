@@ -1,26 +1,163 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 142 76% 36%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 20% 95%;
+    --secondary-foreground: 0 0% 0%;
+    --muted: 210 20% 95%;
+    --muted-foreground: 0 0% 40%;
+    --accent: 210 100% 50%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+    --radius: 0.5rem;
+    --chart-1: 142 76% 36%;
+    --chart-2: 210 100% 50%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 0 84% 60%;
+    --chart-5: 280 65% 60%;
+    
+    /* Brand colors */
+    --brand-success: 142 76% 36%;
+    --brand-primary: 210 100% 50%;
+    --brand-warning: 38 92% 50%;
+    --brand-error: 0 84% 60%;
+    --brand-info: 280 65% 60%;
+    --brand-muted: 210 20% 95%;
+    --brand-border: 210 20% 90%;
+    
+    /* Sidebar colors - Brand theme */
+    --sidebar: 0 0% 100%;
+    --sidebar-foreground: 0 0% 0%;
+    --sidebar-primary: 142 76% 36%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 20% 95%;
+    --sidebar-accent-foreground: 0 0% 0%;
+    --sidebar-border: 210 20% 90%;
+    --sidebar-ring: 210 100% 50%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 142 76% 46%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 210 20% 15%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 210 20% 15%;
+    --muted-foreground: 0 0% 60%;
+    --accent: 210 100% 60%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 84% 70%;
+    --destructive-foreground: 0 0% 0%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --chart-1: 142 76% 46%;
+    --chart-2: 210 100% 60%;
+    --chart-3: 38 92% 60%;
+    --chart-4: 0 84% 70%;
+    --chart-5: 280 65% 70%;
+    
+    /* Brand colors (dark mode) */
+    --brand-success: 142 76% 46%;
+    --brand-primary: 210 100% 60%;
+    --brand-warning: 38 92% 60%;
+    --brand-error: 0 84% 70%;
+    --brand-info: 280 65% 70%;
+    --brand-muted: 210 20% 15%;
+    --brand-border: 210 20% 25%;
+    
+    /* Dark sidebar colors - Brand theme */
+    --sidebar: 0 0% 10%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 142 76% 46%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 210 20% 15%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 210 20% 25%;
+    --sidebar-ring: 210 100% 60%;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+}
+
+@layer utilities {
+  /* Brand color utilities */
+  .bg-success {
+    background-color: hsl(var(--brand-success));
+  }
+  
+  .bg-primary {
+    background-color: hsl(var(--brand-primary));
+  }
+  
+  .bg-warning {
+    background-color: hsl(var(--brand-warning));
+  }
+  
+  .bg-error {
+    background-color: hsl(var(--brand-error));
+  }
+  
+  .bg-info {
+    background-color: hsl(var(--brand-info));
+  }
+  
+  .bg-muted {
+    background-color: hsl(var(--brand-muted));
+  }
+  
+  .text-success {
+    color: hsl(var(--brand-success));
+  }
+  
+  .text-primary {
+    color: hsl(var(--brand-primary));
+  }
+  
+  .text-warning {
+    color: hsl(var(--brand-warning));
+  }
+  
+  .text-error {
+    color: hsl(var(--brand-error));
+  }
+  
+  .text-info {
+    color: hsl(var(--brand-info));
+  }
+  
+  .border-brand {
+    border-color: hsl(var(--brand-border));
+  }
+  
+  .ring-brand {
+    --tw-ring-color: hsl(var(--brand-primary));
+  }
 }
