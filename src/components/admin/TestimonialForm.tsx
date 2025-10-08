@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import toast from 'react-hot-toast'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -9,6 +10,9 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
+import { ImageUpload } from '@/components/ui/ImageUpload'
+import { type ImageUploadResponse } from '@/lib/imageUpload'
 import {
   Form,
   FormControl,
@@ -32,7 +36,7 @@ const formSchema = z.object({
   name: z.string().min(1, 'Client name is required'),
   rating: z.number().min(1).max(5),
   review: z.string().min(10, 'Review must be at least 10 characters'),
-  platform: z.string().min(1, 'Platform is required'),
+  clientImage: z.string().optional(),
   featured: z.boolean(),
   date: z.string().optional(),
 })
@@ -52,6 +56,7 @@ export function TestimonialForm({ onClose, testimonial, isEdit = false, onSucces
   const [isOpening, setIsOpening] = useState(true)
   const [showCalendar, setShowCalendar] = useState(false)
   const [currentMonth, setCurrentMonth] = useState(new Date())
+  const [clientImage, setClientImage] = useState<string>('')
   const { token } = useAuth()
 
   // Handle opening animation
@@ -92,7 +97,7 @@ export function TestimonialForm({ onClose, testimonial, isEdit = false, onSucces
       name: (testimonial as Record<string, unknown>)?.name as string || '',
       rating: (testimonial as Record<string, unknown>)?.rating as number || 5,
       review: (testimonial as Record<string, unknown>)?.review as string || '',
-      platform: (testimonial as Record<string, unknown>)?.platform as string || 'Google',
+      clientImage: (testimonial as Record<string, unknown>)?.clientImage as string || '',
       featured: (testimonial as Record<string, unknown>)?.featured as boolean || false,
       date: (testimonial as Record<string, unknown>)?.date as string || new Date().toISOString().split('T')[0],
     },
@@ -104,10 +109,11 @@ export function TestimonialForm({ onClose, testimonial, isEdit = false, onSucces
         name: (testimonial as Record<string, unknown>)?.name as string || '',
         rating: (testimonial as Record<string, unknown>)?.rating as number || 5,
         review: (testimonial as Record<string, unknown>)?.review as string || '',
-        platform: (testimonial as Record<string, unknown>)?.platform as string || 'Google',
+        clientImage: (testimonial as Record<string, unknown>)?.clientImage as string || '',
         featured: (testimonial as Record<string, unknown>)?.featured as boolean || false,
         date: (testimonial as Record<string, unknown>)?.date as string || new Date().toISOString().split('T')[0],
       })
+      setClientImage((testimonial as Record<string, unknown>)?.clientImage as string || '')
     }
   }, [isEdit, testimonial, form])
 
@@ -227,6 +233,27 @@ export function TestimonialForm({ onClose, testimonial, isEdit = false, onSucces
     setCurrentMonth(newMonth)
   }
 
+  const handleClientImageUpload = (result: ImageUploadResponse) => {
+    if (result.data?.url) {
+      setClientImage(result.data!.url)
+      form.setValue('clientImage', result.data!.url)
+      toast.success('Client image uploaded successfully!', {
+        duration: 3000,
+        position: 'bottom-right',
+        style: {
+          background: document.documentElement.classList.contains('dark') 
+            ? 'rgba(9, 222, 66,0.3)' 
+            : '#09de42',
+          color: '#fff',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          fontSize: '14px',
+          fontWeight: '500',
+        },
+      })
+    }
+  }
+
   return (
     <div className={`fixed inset-0 bg-black/50 z-50 transition-opacity duration-300 ${
       isOpening ? 'opacity-0' : isClosing ? 'opacity-0' : 'opacity-100'
@@ -260,7 +287,7 @@ export function TestimonialForm({ onClose, testimonial, isEdit = false, onSucces
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               {/* Basic Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
                 <FormField
                   control={form.control}
                   name="name"
@@ -270,31 +297,6 @@ export function TestimonialForm({ onClose, testimonial, isEdit = false, onSucces
                       <FormControl>
                         <Input placeholder="e.g., Sarah Johnson" {...field} />
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="platform"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Platform *</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select platform" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Google">Google</SelectItem>
-                          <SelectItem value="Facebook">Facebook</SelectItem>
-                          <SelectItem value="LinkedIn">LinkedIn</SelectItem>
-                          <SelectItem value="Yelp">Yelp</SelectItem>
-                          <SelectItem value="Trustpilot">Trustpilot</SelectItem>
-                          <SelectItem value="Other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -319,6 +321,58 @@ export function TestimonialForm({ onClose, testimonial, isEdit = false, onSucces
                   </FormItem>
                 )}
               />
+
+              {/* Client Image Upload */}
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-sm font-medium">Client Image</Label>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                    Upload a photo of the client for the testimonial
+                  </p>
+                  <ImageUpload
+                    onUploadSuccess={handleClientImageUpload}
+                    onUploadError={(error) => toast.error(error)}
+                    maxFiles={1}
+                    allowMultiple={false}
+                    maxSize={1024 * 1024} // 1MB
+                    className="mb-4"
+                    title="Upload Client Image"
+                    description="Drag and drop client image here, or click to browse"
+                    supportText="Supports: JPG, PNG (max 1MB) for client image"
+                  />
+                  {clientImage && (
+                    <div className="mt-3">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white mb-2">Client Image:</p>
+                      <div className="flex items-center space-x-4">
+                        <div className="relative">
+                          <Image
+                            src={clientImage}
+                            alt="Client Image"
+                            width={64}
+                            height={64}
+                            className="w-16 h-16 object-cover rounded-full border-2 border-gray-200 dark:border-gray-700"
+                          />
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="absolute -top-2 -right-2 w-6 h-6 rounded-full p-0"
+                            onClick={() => {
+                              setClientImage('')
+                              form.setValue('clientImage', '')
+                            }}
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Image uploaded successfully</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-500">This will appear with the testimonial</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
 
               {/* Rating and Featured */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

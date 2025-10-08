@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
-import { RefreshCw } from 'lucide-react'
+import { RefreshCw, Sidebar } from 'lucide-react'
 import { AppSidebar } from '@/components/admin/app-sidebar'
 import { PortfolioForm } from '@/components/admin/PortfolioForm'
 import { TestimonialForm } from '@/components/admin/TestimonialForm'
@@ -15,6 +15,7 @@ import { CareersManagement } from '@/components/admin/CareersManagement'
 import { Analytics } from '@/components/admin/Analytics'
 import { Settings } from '@/components/admin/Settings'
 import { type Project, type Testimonial, type Career } from '@/lib/api'
+import toast from 'react-hot-toast'
 import Swal from 'sweetalert2'
 
 export default function AdminLayoutClient() {
@@ -27,6 +28,8 @@ export default function AdminLayoutClient() {
   const [isClient, setIsClient] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [authLoading, setAuthLoading] = useState(true)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
 
   // Data states
   const [projects, setProjects] = useState<Project[]>([])
@@ -111,6 +114,26 @@ export default function AdminLayoutClient() {
   useEffect(() => {
     setIsClient(true)
     setMounted(true)
+    
+    // Check if mobile
+    const checkMobile = () => {
+      try {
+        if (typeof window !== 'undefined') {
+          setIsMobile(window.innerWidth < 1024) // lg breakpoint
+          if (window.innerWidth < 1024) {
+            setSidebarCollapsed(true) // Collapse on mobile by default
+          }
+        }
+      } catch (error) {
+        console.error('Error checking mobile:', error)
+      }
+    }
+    
+    checkMobile()
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', checkMobile)
+      return () => window.removeEventListener('resize', checkMobile)
+    }
   }, [])
 
   // Listen for hash changes to sync with sidebar navigation
@@ -180,17 +203,17 @@ export default function AdminLayoutClient() {
     } catch (error) {
       console.error('Error fetching data:', error)
       setDataError(error instanceof Error ? error.message : 'Failed to fetch data')
-      Swal.fire({
-        title: 'Error!',
-        text: `Failed to load data: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        icon: 'error',
-        confirmButtonColor: '#ef4444',
-        customClass: {
-          popup: 'dark:bg-gray-800 dark:text-white',
-          title: 'dark:text-white',
-          htmlContainer: 'dark:text-gray-300',
-          confirmButton: 'bg-red-600 hover:bg-red-700 text-white'
-        }
+      toast.error(`Failed to load data: ${error instanceof Error ? error.message : 'Unknown error'}`, {
+        duration: 5000,
+        position: 'bottom-right',
+        style: {
+          background: '#ef4444',
+          color: '#fff',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          fontSize: '14px',
+          fontWeight: '500',
+        },
       })
     } finally {
       setIsDataLoading(false)
@@ -320,33 +343,35 @@ export default function AdminLayoutClient() {
       }
       
       // Show success alert
-      await Swal.fire({
-        title: 'Success!',
-        text: `${section.charAt(0).toUpperCase() + section.slice(1)} settings saved successfully!`,
-        icon: 'success',
-        timer: 2000,
-        showConfirmButton: false,
-        customClass: {
-          popup: 'dark:bg-gray-800 dark:text-white',
-          title: 'dark:text-white',
-          htmlContainer: 'dark:text-gray-300'
-        }
+      toast.success(`${section.charAt(0).toUpperCase() + section.slice(1)} settings saved successfully!`, {
+        duration: 3000,
+        position: 'bottom-right',
+        style: {
+          background: document.documentElement.classList.contains('dark') 
+            ? 'rgba(9, 222, 66,0.3)' 
+            : '#09de42',
+          color: '#fff',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          fontSize: '14px',
+          fontWeight: '500',
+        },
       })
     } catch (error) {
       console.error('Error saving settings:', error)
       
       // Show error alert
-      await Swal.fire({
-        title: 'Error!',
-        text: 'Failed to save settings. Please try again.',
-        icon: 'error',
-        confirmButtonColor: '#ef4444',
-        customClass: {
-          popup: 'dark:bg-gray-800 dark:text-white',
-          title: 'dark:text-white',
-          htmlContainer: 'dark:text-gray-300',
-          confirmButton: 'bg-red-600 hover:bg-red-700 text-white'
-        }
+      toast.error('Failed to save settings. Please try again.', {
+        duration: 4000,
+        position: 'bottom-right',
+        style: {
+          background: '#ef4444',
+          color: '#fff',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          fontSize: '14px',
+          fontWeight: '500',
+        },
       })
     } finally {
       setIsSaving(false)
@@ -376,17 +401,17 @@ export default function AdminLayoutClient() {
       document.body.removeChild(a)
     } catch (error) {
       console.error('Error exporting settings:', error)
-      Swal.fire({
-        title: 'Error!',
-        text: 'Failed to export settings.',
-        icon: 'error',
-        confirmButtonColor: '#ef4444',
-        customClass: {
-          popup: 'dark:bg-gray-800 dark:text-white',
-          title: 'dark:text-white',
-          htmlContainer: 'dark:text-gray-300',
-          confirmButton: 'bg-red-600 hover:bg-red-700 text-white'
-        }
+      toast.error('Failed to export settings.', {
+        duration: 4000,
+        position: 'bottom-right',
+        style: {
+          background: '#ef4444',
+          color: '#fff',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          fontSize: '14px',
+          fontWeight: '500',
+        },
       })
     }
   }
@@ -411,31 +436,33 @@ export default function AdminLayoutClient() {
         localStorage.setItem('admin-settings', JSON.stringify(importedSettings))
       }
       
-      Swal.fire({
-        title: 'Success!',
-        text: 'Settings imported successfully!',
-        icon: 'success',
-        timer: 2000,
-        showConfirmButton: false,
-        customClass: {
-          popup: 'dark:bg-gray-800 dark:text-white',
-          title: 'dark:text-white',
-          htmlContainer: 'dark:text-gray-300'
-        }
+      toast.success('Settings imported successfully!', {
+        duration: 3000,
+        position: 'bottom-right',
+        style: {
+          background: document.documentElement.classList.contains('dark') 
+            ? 'rgba(9, 222, 66,0.3)' 
+            : '#09de42',
+          color: '#fff',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          fontSize: '14px',
+          fontWeight: '500',
+        },
       })
     } catch (error) {
       console.error('Error importing settings:', error)
-      Swal.fire({
-        title: 'Error!',
-        text: 'Failed to import settings. Please check the file format.',
-        icon: 'error',
-        confirmButtonColor: '#ef4444',
-        customClass: {
-          popup: 'dark:bg-gray-800 dark:text-white',
-          title: 'dark:text-white',
-          htmlContainer: 'dark:text-gray-300',
-          confirmButton: 'bg-red-600 hover:bg-red-700 text-white'
-        }
+      toast.error('Failed to import settings. Please check the file format.', {
+        duration: 4000,
+        position: 'bottom-right',
+        style: {
+          background: '#ef4444',
+          color: '#fff',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          fontSize: '14px',
+          fontWeight: '500',
+        },
       })
     }
   }
@@ -525,31 +552,33 @@ export default function AdminLayoutClient() {
           localStorage.setItem('admin-settings', JSON.stringify(defaultSettings))
         }
         
-        Swal.fire({
-          title: 'Success!',
-          text: 'Settings have been reset to default values.',
-          icon: 'success',
-          timer: 2000,
-          showConfirmButton: false,
-          customClass: {
-            popup: 'dark:bg-gray-800 dark:text-white',
-            title: 'dark:text-white',
-            htmlContainer: 'dark:text-gray-300'
-          }
+        toast.success('Settings have been reset to default values.', {
+          duration: 3000,
+          position: 'bottom-right',
+          style: {
+            background: document.documentElement.classList.contains('dark') 
+              ? 'rgba(9, 222, 66,0.3)' 
+              : '#09de42',
+            color: '#fff',
+            borderRadius: '8px',
+            padding: '12px 16px',
+            fontSize: '14px',
+            fontWeight: '500',
+          },
         })
       } catch (error) {
         console.error('Error resetting settings:', error)
-        Swal.fire({
-          title: 'Error!',
-          text: 'Failed to reset settings.',
-          icon: 'error',
-          confirmButtonColor: '#ef4444',
-          customClass: {
-            popup: 'dark:bg-gray-800 dark:text-white',
-            title: 'dark:text-white',
-            htmlContainer: 'dark:text-gray-300',
-            confirmButton: 'bg-red-600 hover:bg-red-700 text-white'
-          }
+        toast.error('Failed to reset settings.', {
+          duration: 4000,
+          position: 'bottom-right',
+          style: {
+            background: '#ef4444',
+            color: '#fff',
+            borderRadius: '8px',
+            padding: '12px 16px',
+            fontSize: '14px',
+            fontWeight: '500',
+          },
         })
       }
     }
@@ -598,31 +627,33 @@ export default function AdminLayoutClient() {
           setCareers(prev => prev.filter(c => c._id !== id))
         }
 
-        await Swal.fire({
-          title: 'Deleted!',
-          text: `The ${type} has been deleted successfully.`,
-          icon: 'success',
-          timer: 2000,
-          showConfirmButton: false,
-          customClass: {
-            popup: 'dark:bg-gray-800 dark:text-white',
-            title: 'dark:text-white',
-            htmlContainer: 'dark:text-gray-300'
-          }
+        toast.success(`The ${type} has been deleted successfully.`, {
+          duration: 3000,
+          position: 'bottom-right',
+          style: {
+            background: document.documentElement.classList.contains('dark') 
+              ? 'rgba(9, 222, 66,0.3)' 
+              : '#09de42',
+            color: '#fff',
+            borderRadius: '8px',
+            padding: '12px 16px',
+            fontSize: '14px',
+            fontWeight: '500',
+          },
         })
       } catch (error) {
         console.error(`Error deleting ${type}:`, error)
-        await Swal.fire({
-          title: 'Error!',
-          text: `Failed to delete ${type}. Please try again.`,
-          icon: 'error',
-          confirmButtonColor: '#ef4444',
-          customClass: {
-            popup: 'dark:bg-gray-800 dark:text-white',
-            title: 'dark:text-white',
-            htmlContainer: 'dark:text-gray-300',
-            confirmButton: 'bg-red-600 hover:bg-red-700 text-white'
-          }
+        toast.error(`Failed to delete ${type}. Please try again.`, {
+          duration: 4000,
+          position: 'bottom-right',
+          style: {
+            background: '#ef4444',
+            color: '#fff',
+            borderRadius: '8px',
+            padding: '12px 16px',
+            fontSize: '14px',
+            fontWeight: '500',
+          },
         })
       }
     }
@@ -654,8 +685,30 @@ export default function AdminLayoutClient() {
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Mobile Overlay */}
+      {isMobile && !sidebarCollapsed && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={(e) => {
+            e.preventDefault()
+            try {
+              setSidebarCollapsed(true)
+            } catch (error) {
+              console.error('Error closing sidebar:', error)
+            }
+          }}
+        />
+      )}
+      
       {/* Sidebar */}
-      <AppSidebar />
+      <div className={`${isMobile ? 'fixed z-50' : 'relative'} ${
+        isMobile && sidebarCollapsed ? '-translate-x-full' : 'translate-x-0'
+      } transition-transform duration-300 shadow-md dark:shadow-gray-700 z-10`}>
+        <AppSidebar 
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        />
+      </div>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -663,6 +716,19 @@ export default function AdminLayoutClient() {
         <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
+              {/* Sidebar Toggle */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.preventDefault()
+                  setSidebarCollapsed(!sidebarCollapsed)
+                }}
+                className="h-8 w-8 p-0"
+                title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              >
+                <Sidebar className="h-4 w-4" />
+              </Button>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                 {activeTab === 'dashboard' && 'Dashboard'}
                 {activeTab === 'portfolio' && 'Portfolio Management'}
@@ -773,7 +839,7 @@ export default function AdminLayoutClient() {
               lastRefresh={lastRefresh}
               isDataLoading={isDataLoading}
               onRefresh={() => {
-                setAnalyticsLoading(true)
+                    setAnalyticsLoading(true)
                 fetchData().finally(() => setAnalyticsLoading(false))
               }}
               onTabChange={(tab) => {
@@ -794,9 +860,9 @@ export default function AdminLayoutClient() {
               onThemeChange={handleThemeChange}
               isSaving={isSaving}
             />
-          )}
-        </div>
-      </div>
+                              )}
+                            </div>
+                              </div>
 
       {/* Form Modals */}
       {showPortfolioForm && (
@@ -846,6 +912,6 @@ export default function AdminLayoutClient() {
           }}
         />
       )}
-    </div>
+                            </div>
   )
 }

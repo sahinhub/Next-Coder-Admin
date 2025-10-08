@@ -6,7 +6,7 @@ import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { TestimonialForm } from '@/components/admin/TestimonialForm'
-import Swal from 'sweetalert2'
+import toast from 'react-hot-toast'
 
 export default function EditTestimonialPage() {
   const router = useRouter()
@@ -33,17 +33,17 @@ export default function EditTestimonialPage() {
         setTestimonial(data)
       } catch (error) {
         console.error('Error fetching testimonial:', error)
-        await Swal.fire({
-          title: 'Error!',
-          text: 'Failed to load testimonial details',
-          icon: 'error',
-          confirmButtonColor: '#ef4444',
-          customClass: {
-            popup: 'dark:bg-gray-800 dark:text-white',
-            title: 'dark:text-white',
-            htmlContainer: 'dark:text-gray-300',
-            confirmButton: 'bg-red-600 hover:bg-red-700 text-white'
-          }
+        toast.error('Failed to load testimonial details', {
+          duration: 4000,
+          position: 'bottom-right',
+          style: {
+            background: '#ef4444',
+            color: '#fff',
+            borderRadius: '8px',
+            padding: '12px 16px',
+            fontSize: '14px',
+            fontWeight: '500',
+          },
         })
         router.push('/admin#testimonials')
       } finally {

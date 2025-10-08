@@ -6,7 +6,7 @@ import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { PortfolioForm } from '@/components/admin/PortfolioForm'
-import Swal from 'sweetalert2'
+import toast from 'react-hot-toast'
 
 export default function EditPortfolioPage() {
   const router = useRouter()
@@ -33,17 +33,17 @@ export default function EditPortfolioPage() {
         setPortfolio(data)
       } catch (error) {
         console.error('Error fetching portfolio:', error)
-        await Swal.fire({
-          title: 'Error!',
-          text: 'Failed to load portfolio details',
-          icon: 'error',
-          confirmButtonColor: '#ef4444',
-          customClass: {
-            popup: 'dark:bg-gray-800 dark:text-white',
-            title: 'dark:text-white',
-            htmlContainer: 'dark:text-gray-300',
-            confirmButton: 'bg-red-600 hover:bg-red-700 text-white'
-          }
+        toast.error('Failed to load portfolio details', {
+          duration: 4000,
+          position: 'bottom-right',
+          style: {
+            background: '#ef4444',
+            color: '#fff',
+            borderRadius: '8px',
+            padding: '12px 16px',
+            fontSize: '14px',
+            fontWeight: '500',
+          },
         })
         router.push('/admin#portfolio')
       } finally {

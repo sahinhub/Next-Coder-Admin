@@ -14,7 +14,11 @@ import {
 import { type Project, type Testimonial, type Career } from '@/lib/api'
 
 interface DashboardProps {
-  user: any
+  user: {
+    username: string
+    email: string
+    fullName?: string
+  } | null
   projects: Project[]
   testimonials: Testimonial[]
   careers: Career[]

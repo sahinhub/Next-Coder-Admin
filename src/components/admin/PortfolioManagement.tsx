@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -37,13 +38,17 @@ export function PortfolioManagement({
   const itemsPerPage = 10
 
   // Filter data based on search term
-  const filteredPortfolios = projects.filter(portfolio =>
-    portfolio.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    portfolio.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (Array.isArray(portfolio.category) ? portfolio.category.some(cat => 
-      cat.toLowerCase().includes(searchTerm.toLowerCase())
-    ) : portfolio.category?.toLowerCase().includes(searchTerm.toLowerCase()))
-  )
+  const filteredPortfolios = projects.filter(portfolio => {
+    const titleMatch = portfolio.title.toLowerCase().includes(searchTerm.toLowerCase())
+    const descriptionMatch = portfolio.description?.toLowerCase().includes(searchTerm.toLowerCase()) || false
+    const categoryMatch = Array.isArray(portfolio.category) 
+      ? portfolio.category.some(cat => String(cat).toLowerCase().includes(searchTerm.toLowerCase()))
+      : (portfolio.category && typeof portfolio.category === 'string' 
+          ? String(portfolio.category).toLowerCase().includes(searchTerm.toLowerCase()) 
+          : false)
+    
+    return titleMatch || descriptionMatch || categoryMatch
+  })
 
   // Pagination calculations
   const totalPages = Math.ceil(filteredPortfolios.length / itemsPerPage)
@@ -82,8 +87,8 @@ export function PortfolioManagement({
       </div>
 
       {/* Portfolio Table */}
-      <Card>
-        <CardContent className="p-0">
+      <Card className='p-0'>
+        <CardContent className="p-0 rounded-lg">
           {filteredPortfolios.length === 0 ? (
             <div className="text-center py-12">
               <div className="mx-auto w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
@@ -104,7 +109,7 @@ export function PortfolioManagement({
             <>
               {/* Desktop Table */}
               <div className="hidden lg:block overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full rounded-lg">
                   <thead className="bg-gray-50 dark:bg-gray-800">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Project</th>
@@ -122,9 +127,11 @@ export function PortfolioManagement({
                           <div className="flex items-center">
                             <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
                               {portfolio.thumbnail ? (
-                                <img 
+                                <Image 
                                   src={portfolio.thumbnail} 
                                   alt={portfolio.title}
+                                  width={64}
+                                  height={64}
                                   className="w-full h-full object-cover rounded-lg"
                                 />
                               ) : (
@@ -203,9 +210,11 @@ export function PortfolioManagement({
                     <div className="flex items-start space-x-4">
                       <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0">
                         {portfolio.thumbnail ? (
-                          <img 
+                          <Image 
                             src={portfolio.thumbnail} 
                             alt={portfolio.title}
+                            width={64}
+                            height={64}
                             className="w-full h-full object-cover rounded-lg"
                           />
                         ) : (

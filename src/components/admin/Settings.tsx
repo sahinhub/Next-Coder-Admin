@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,9 +18,57 @@ import {
   Eye
 } from 'lucide-react'
 
+interface SettingsData {
+  general: {
+    siteName: string
+    companyName: string
+    contactEmail: string
+    contactPhone: string
+    timezone: string
+    language: string
+  }
+  display: {
+    darkMode: boolean
+    showAnalytics: boolean
+    autoSave: boolean
+    showNotifications: boolean
+    itemsPerPage: number
+  }
+  account: {
+    fullName: string
+    email: string
+    username: string
+    bio: string
+    location: string
+    website: string
+  }
+  notifications: {
+    emailNotifications: boolean
+    pushNotifications: boolean
+    weeklyReports: boolean
+    securityAlerts: boolean
+    newTestimonials: boolean
+    newApplications: boolean
+  }
+  security: {
+    twoFactorAuth: boolean
+    sessionTimeout: number
+    passwordExpiry: number
+    loginAttempts: number
+    ipWhitelist: string[]
+    loginAlerts: boolean
+  }
+  api: {
+    webhookUrl: string
+    rateLimit: number
+    enableCors: boolean
+    debugMode: boolean
+  }
+}
+
 interface SettingsProps {
-  settings: any
-  onUpdateSettings: (section: string, field: string, value: any) => void
+  settings: SettingsData
+  onUpdateSettings: (section: string, field: string, value: string | number | boolean | string[]) => void
   onSaveSettings: (section: string) => void
   onExportSettings: () => void
   onImportSettings: (event: React.ChangeEvent<HTMLInputElement>) => void
@@ -102,7 +150,7 @@ export function Settings({
               <Input
                 value={settings.general.siteName}
                 onChange={(e) => onUpdateSettings('general', 'siteName', e.target.value)}
-                className="mt-1"
+                className="mt-1 bg-gray-100 dark:bg-gray-800 dark:border-gray-600 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
               />
             </div>
             <div>
@@ -110,7 +158,7 @@ export function Settings({
               <Input
                 value={settings.general.companyName}
                 onChange={(e) => onUpdateSettings('general', 'companyName', e.target.value)}
-                className="mt-1"
+                className="mt-1 bg-gray-100 dark:bg-gray-800 dark:border-gray-600 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
               />
             </div>
             <div>
@@ -119,7 +167,7 @@ export function Settings({
                 type="email"
                 value={settings.general.contactEmail}
                 onChange={(e) => onUpdateSettings('general', 'contactEmail', e.target.value)}
-                className="mt-1"
+                className="mt-1 bg-gray-100 dark:bg-gray-800 dark:border-gray-600 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
               />
             </div>
             <div>
@@ -127,7 +175,7 @@ export function Settings({
               <Input
                 value={settings.general.contactPhone}
                 onChange={(e) => onUpdateSettings('general', 'contactPhone', e.target.value)}
-                className="mt-1"
+                className="mt-1 bg-gray-100 dark:bg-gray-800 dark:border-gray-600 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
               />
             </div>
             <Button
@@ -240,7 +288,7 @@ export function Settings({
               <Input
                 value={settings.account.fullName}
                 onChange={(e) => onUpdateSettings('account', 'fullName', e.target.value)}
-                className="mt-1"
+                className="mt-1 bg-gray-100 dark:bg-gray-800 dark:border-gray-600 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
               />
             </div>
             <div>
@@ -249,7 +297,7 @@ export function Settings({
                 type="email"
                 value={settings.account.email}
                 onChange={(e) => onUpdateSettings('account', 'email', e.target.value)}
-                className="mt-1"
+                className="mt-1 bg-gray-100 dark:bg-gray-800 dark:border-gray-600 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
               />
             </div>
             <div>
@@ -257,7 +305,7 @@ export function Settings({
               <Input
                 value={settings.account.username}
                 onChange={(e) => onUpdateSettings('account', 'username', e.target.value)}
-                className="mt-1"
+                className="mt-1 bg-gray-100 dark:bg-gray-800 dark:border-gray-600 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
               />
             </div>
             <div>
@@ -265,7 +313,7 @@ export function Settings({
               <textarea
                 value={settings.account.bio}
                 onChange={(e) => onUpdateSettings('account', 'bio', e.target.value)}
-                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 bg-gray-100 dark:bg-gray-800 dark:border-gray-600 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
                 rows={3}
               />
             </div>
@@ -382,7 +430,7 @@ export function Settings({
                 max="480"
                 value={settings.security.sessionTimeout}
                 onChange={(e) => onUpdateSettings('security', 'sessionTimeout', parseInt(e.target.value))}
-                className="mt-1"
+                className="mt-1 bg-gray-100 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
               />
             </div>
             <Button
@@ -421,7 +469,7 @@ export function Settings({
                 type="url"
                 value={settings.api.webhookUrl}
                 onChange={(e) => onUpdateSettings('api', 'webhookUrl', e.target.value)}
-                className="mt-1"
+                className="mt-1 bg-gray-100 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
                 placeholder="https://example.com/webhook"
               />
             </div>
@@ -433,7 +481,7 @@ export function Settings({
                 max="10000"
                 value={settings.api.rateLimit}
                 onChange={(e) => onUpdateSettings('api', 'rateLimit', parseInt(e.target.value))}
-                className="mt-1"
+                className="mt-1 bg-gray-100 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
               />
             </div>
             <Button

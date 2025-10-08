@@ -10,7 +10,7 @@ import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { User, Shield, Key, ArrowLeft, Save, Eye, EyeOff } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import Swal from 'sweetalert2'
+import toast from 'react-hot-toast'
 
 export default function AccountPage() {
   const { user, changePassword, logout } = useAuth()
@@ -61,31 +61,33 @@ export default function AccountPage() {
     try {
       // Here you would typically make an API call to update the profile
       // For now, we'll just show a success message
-      await Swal.fire({
-        title: 'Success!',
-        text: 'Profile updated successfully!',
-        icon: 'success',
-        timer: 2000,
-        showConfirmButton: false,
-        customClass: {
-          popup: 'dark:bg-gray-800 dark:text-white',
-          title: 'dark:text-white',
-          htmlContainer: 'dark:text-gray-300'
-        }
+      toast.success('Profile updated successfully!', {
+        duration: 3000,
+        position: 'bottom-right',
+        style: {
+          background: document.documentElement.classList.contains('dark') 
+            ? 'rgba(9, 222, 66,0.3)' 
+            : '#09de42',
+          color: '#fff',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          fontSize: '14px',
+          fontWeight: '500',
+        },
       })
       setIsEditing(false)
     } catch {
-      await Swal.fire({
-        title: 'Error!',
-        text: 'Failed to update profile. Please try again.',
-        icon: 'error',
-        confirmButtonColor: '#ef4444',
-        customClass: {
-          popup: 'dark:bg-gray-800 dark:text-white',
-          title: 'dark:text-white',
-          htmlContainer: 'dark:text-gray-300',
-          confirmButton: 'bg-red-600 hover:bg-red-700 text-white'
-        }
+      toast.error('Failed to update profile. Please try again.', {
+        duration: 4000,
+        position: 'bottom-right',
+        style: {
+          background: '#ef4444',
+          color: '#fff',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          fontSize: '14px',
+          fontWeight: '500',
+        },
       })
     } finally {
       setIsLoading(false)
@@ -94,33 +96,33 @@ export default function AccountPage() {
 
   const handleChangePassword = async () => {
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      await Swal.fire({
-        title: 'Error!',
-        text: 'New passwords do not match',
-        icon: 'error',
-        confirmButtonColor: '#ef4444',
-        customClass: {
-          popup: 'dark:bg-gray-800 dark:text-white',
-          title: 'dark:text-white',
-          htmlContainer: 'dark:text-gray-300',
-          confirmButton: 'bg-red-600 hover:bg-red-700 text-white'
-        }
+      toast.error('New passwords do not match', {
+        duration: 4000,
+        position: 'bottom-right',
+        style: {
+          background: '#ef4444',
+          color: '#fff',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          fontSize: '14px',
+          fontWeight: '500',
+        },
       })
       return
     }
 
     if (passwordData.newPassword.length < 6) {
-      await Swal.fire({
-        title: 'Error!',
-        text: 'New password must be at least 6 characters long',
-        icon: 'error',
-        confirmButtonColor: '#ef4444',
-        customClass: {
-          popup: 'dark:bg-gray-800 dark:text-white',
-          title: 'dark:text-white',
-          htmlContainer: 'dark:text-gray-300',
-          confirmButton: 'bg-red-600 hover:bg-red-700 text-white'
-        }
+      toast.error('New password must be at least 6 characters long', {
+        duration: 4000,
+        position: 'bottom-right',
+        style: {
+          background: '#ef4444',
+          color: '#fff',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          fontSize: '14px',
+          fontWeight: '500',
+        },
       })
       return
     }
@@ -130,17 +132,19 @@ export default function AccountPage() {
       const success = await changePassword(passwordData.currentPassword, passwordData.newPassword)
       
       if (success) {
-        await Swal.fire({
-          title: 'Success!',
-          text: 'Password changed successfully!',
-          icon: 'success',
-          timer: 2000,
-          showConfirmButton: false,
-          customClass: {
-            popup: 'dark:bg-gray-800 dark:text-white',
-            title: 'dark:text-white',
-            htmlContainer: 'dark:text-gray-300'
-          }
+        toast.success('Password changed successfully!', {
+          duration: 3000,
+          position: 'bottom-right',
+          style: {
+            background: document.documentElement.classList.contains('dark') 
+              ? 'rgba(9, 222, 66,0.3)' 
+              : '#09de42',
+            color: '#fff',
+            borderRadius: '8px',
+            padding: '12px 16px',
+            fontSize: '14px',
+            fontWeight: '500',
+          },
         })
         setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' })
         setIsChangingPassword(false)
@@ -148,17 +152,17 @@ export default function AccountPage() {
         throw new Error('Failed to change password')
       }
     } catch {
-      await Swal.fire({
-        title: 'Error!',
-        text: 'Failed to change password. Please check your current password and try again.',
-        icon: 'error',
-        confirmButtonColor: '#ef4444',
-        customClass: {
-          popup: 'dark:bg-gray-800 dark:text-white',
-          title: 'dark:text-white',
-          htmlContainer: 'dark:text-gray-300',
-          confirmButton: 'bg-red-600 hover:bg-red-700 text-white'
-        }
+      toast.error('Failed to change password. Please check your current password and try again.', {
+        duration: 4000,
+        position: 'bottom-right',
+        style: {
+          background: '#ef4444',
+          color: '#fff',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          fontSize: '14px',
+          fontWeight: '500',
+        },
       })
     } finally {
       setIsLoading(false)
@@ -166,26 +170,22 @@ export default function AccountPage() {
   }
 
   const handleLogout = async () => {
-    const result = await Swal.fire({
-      title: 'Logout?',
-      text: 'Are you sure you want to logout?',
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#ef4444',
-      cancelButtonColor: '#6b7280',
-      confirmButtonText: 'Yes, logout',
-      cancelButtonText: 'Cancel',
-      customClass: {
-        popup: 'dark:bg-gray-800 dark:text-white',
-        title: 'dark:text-white',
-        htmlContainer: 'dark:text-gray-300',
-        confirmButton: 'bg-red-600 hover:bg-red-700 text-white',
-        cancelButton: 'bg-gray-500 hover:bg-gray-600 text-white'
-      }
-    })
-    
-    if (result.isConfirmed) {
+    if (window.confirm('Are you sure you want to logout?')) {
       await logout()
+      toast.success('Logged out successfully!', {
+        duration: 2000,
+        position: 'bottom-right',
+        style: {
+          background: document.documentElement.classList.contains('dark') 
+            ? 'rgba(9, 222, 66,0.3)' 
+            : '#09de42',
+          color: '#fff',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          fontSize: '14px',
+          fontWeight: '500',
+        },
+      })
       router.push('/login')
     }
   }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import toast from 'react-hot-toast'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -19,7 +20,10 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Badge } from '@/components/ui/badge'
+import { ImageUpload } from '@/components/ui/ImageUpload'
 import { X, Plus, Save } from 'lucide-react'
+import { type ImageUploadResponse } from '@/lib/imageUpload'
+import { PORTFOLIO_ENDPOINTS } from '@/lib/config'
 
 const formSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -60,6 +64,9 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
   const [isLoading, setIsLoading] = useState(false)
   const [isClosing, setIsClosing] = useState(false)
   const [isOpening, setIsOpening] = useState(true)
+  const [uploadedImages, setUploadedImages] = useState<string[]>([])
+  const [galleryImages, setGalleryImages] = useState<string[]>([])
+  const [clientAvatar, setClientAvatar] = useState<string>('')
 
   // Handle opening animation
   useEffect(() => {
@@ -140,6 +147,76 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
     form.setValue('category', updated)
   }
 
+  const handleImageUpload = (result: ImageUploadResponse) => {
+    if (result.data?.url) {
+      setUploadedImages(prev => [...prev, result.data!.url])
+      form.setValue('thumbnail', result.data!.url)
+      toast.success('Image uploaded successfully!', {
+        duration: 3000,
+        position: 'bottom-right',
+        style: {
+          background: document.documentElement.classList.contains('dark') 
+            ? 'rgba(9, 222, 66,0.3)' 
+            : '#09de42',
+          color: '#fff',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          fontSize: '14px',
+          fontWeight: '500',
+        },
+      })
+    }
+  }
+
+  const handleGalleryUpload = (result: ImageUploadResponse) => {
+    if (result.data?.url) {
+      setGalleryImages(prev => [...prev, result.data!.url])
+      const currentGallery = form.getValues('gallery') || []
+      form.setValue('gallery', [...currentGallery, result.data!.url])
+      toast.success('Gallery image uploaded successfully!', {
+        duration: 3000,
+        position: 'bottom-right',
+        style: {
+          background: document.documentElement.classList.contains('dark') 
+            ? 'rgba(9, 222, 66,0.3)' 
+            : '#09de42',
+          color: '#fff',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          fontSize: '14px',
+          fontWeight: '500',
+        },
+      })
+    }
+  }
+
+  const handleClientAvatarUpload = (result: ImageUploadResponse) => {
+    if (result.data?.url) {
+      setClientAvatar(result.data!.url)
+      form.setValue('client_testimonial.image', result.data!.url)
+      toast.success('Client avatar uploaded successfully!', {
+        duration: 3000,
+        position: 'bottom-right',
+        style: {
+          background: document.documentElement.classList.contains('dark') 
+            ? 'rgba(9, 222, 66,0.3)' 
+            : '#09de42',
+          color: '#fff',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          fontSize: '14px',
+          fontWeight: '500',
+        },
+      })
+    }
+  }
+
+  const removeGalleryImage = (index: number) => {
+    const updated = galleryImages.filter((_, i) => i !== index)
+    setGalleryImages(updated)
+    form.setValue('gallery', updated)
+  }
+
 
   const handleClose = () => {
     setIsClosing(true)
@@ -153,7 +230,7 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
     try {
       console.log('Portfolio form submitted:', data)
       
-      // Transform data to match MongoDB structure
+      // Transform data to match MongoDB structure with ImageBB URLs
       const portfolioData = {
         title: data.title,
         slug: data.slug || data.title.toLowerCase().replace(/\s+/g, '-'),
@@ -162,23 +239,42 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
         technologies: data.technologies,
         features: data.features,
         live_url: data.live_url || '',
-        thumbnail: data.thumbnail || '',
-        gallery: data.gallery || [],
-        client_testimonial: data.client_testimonial || {
-          feedback: '',
-          image: '',
-          name: '',
-          role: '',
+        // ImageBB hosted URLs
+        thumbnail: data.thumbnail || '', // ImageBB URL for main project image
+        gallery: data.gallery || [], // Array of ImageBB URLs for project gallery
+        client_testimonial: {
+          feedback: data.client_testimonial?.feedback || '',
+          image: data.client_testimonial?.image || '', // ImageBB URL for client avatar
+          name: data.client_testimonial?.name || '',
+          role: data.client_testimonial?.role || '',
         },
         link: data.link || '',
         date: data.date || new Date().toISOString(),
+        // Additional metadata for ImageBB images
+        imageMetadata: {
+          thumbnail: data.thumbnail ? {
+            url: data.thumbnail,
+            source: 'imagebb',
+            uploadedAt: new Date().toISOString()
+          } : null,
+          gallery: (data.gallery || []).map((url: string) => ({
+            url,
+            source: 'imagebb',
+            uploadedAt: new Date().toISOString()
+          })),
+          clientAvatar: data.client_testimonial?.image ? {
+            url: data.client_testimonial.image,
+            source: 'imagebb',
+            uploadedAt: new Date().toISOString()
+          } : null
+        }
       }
       
-      let url = 'https://nextcoderapi.vercel.app/newPortfolio'
+      let url = PORTFOLIO_ENDPOINTS.CREATE
       let method = 'POST'
       
       if (isEdit && portfolio && '_id' in portfolio && portfolio._id) {
-        url = `https://nextcoderapi.vercel.app/portfolio/update/${portfolio._id}`
+        url = PORTFOLIO_ENDPOINTS.UPDATE(portfolio._id)
         method = 'PUT'
       }
 
@@ -348,23 +444,140 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Full Description *</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Detailed description of the project, features, and outcomes"
-                        className="h-32"
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+
+              {/* Image Upload Section */}
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-sm font-medium">Project Thumbnail</Label>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                    Upload a main screenshot or thumbnail for this project
+                  </p>
+                  <ImageUpload
+                    onUploadSuccess={handleImageUpload}
+                    onUploadError={(error) => toast.error(error)}
+                    maxFiles={1}
+                    allowMultiple={false}
+                    maxSize={4 * 1024 * 1024} // 4MB
+                    className="mb-4"
+                    title="Upload Project Thumbnail"
+                    description="Drag and drop your thumbnail here, or click to browse"
+                    supportText="Supports: JPG, PNG, WebP (max 4MB) for thumbnail"
+                  />
+                  {uploadedImages.length > 0 && (
+                    <div className="mt-3">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white mb-2">Uploaded Thumbnail:</p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {uploadedImages.map((url, index) => (
+                          <div key={index} className="relative group">
+                            <Image
+                              src={url}
+                              alt="Thumbnail"
+                              width={96}
+                              height={96}
+                              className="w-full h-24 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
+                            />
+                            <div className="absolute inset-0 bg-black bg-opacity-50 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => {
+                                  setUploadedImages(prev => prev.filter((_, i) => i !== index))
+                                  form.setValue('thumbnail', '')
+                                }}
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium">Project Gallery</Label>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                    Upload multiple screenshots to showcase your project (up to 10 images)
+                  </p>
+                  <ImageUpload
+                    onUploadSuccess={handleGalleryUpload}
+                    onUploadError={(error) => toast.error(error)}
+                    maxFiles={10}
+                    allowMultiple={true}
+                    className="mb-4"
+                    title="Upload Project Gallery Images"
+                    description="Drag and drop your project gallery image here, or click to browse"
+                    supportText="Supports: JPG, PNG, GIF, WebP (max 32MB) for gallery"
+                  />
+                  {galleryImages.length > 0 && (
+                    <div className="mt-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          Gallery Images ({galleryImages.length}/10):
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setGalleryImages([])
+                            form.setValue('gallery', [])
+                          }}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <X className="w-4 h-4 mr-1" />
+                          Clear All
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {galleryImages.map((url, index) => (
+                          <div key={index} className="relative group">
+                            <Image
+                              src={url}
+                              alt={`Gallery ${index + 1}`}
+                              width={96}
+                              height={96}
+                              className="w-full h-24 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
+                            />
+                            <div className="absolute inset-0 bg-black bg-opacity-50 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              <div className="flex space-x-2">
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => removeGalleryImage(index)}
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  onClick={() => {
+                                    // Move image to front
+                                    const newOrder = [url, ...galleryImages.filter((_, i) => i !== index)]
+                                    setGalleryImages(newOrder)
+                                    form.setValue('gallery', newOrder)
+                                  }}
+                                >
+                                  ↑
+                                </Button>
+                              </div>
+                            </div>
+                            <div className="absolute top-1 left-1 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">
+                              {index + 1}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      {galleryImages.length < 10 && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                          You can upload {10 - galleryImages.length} more images
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
 
               {/* Project URLs */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -481,7 +694,7 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
               </div>
 
               {/* Client Testimonial */}
-              <div className=" ">
+              <div className="space-y-4">
                 <FormField
                   control={form.control}
                   name="client_testimonial.feedback"
@@ -499,6 +712,56 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
                     </FormItem>
                   )}
                 />
+
+                {/* Client Avatar Upload */}
+                <div>
+                  <Label className="text-sm font-medium">Client Avatar</Label>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                    Upload a photo of the client for the testimonial
+                  </p>
+                  <ImageUpload
+                    onUploadSuccess={handleClientAvatarUpload}
+                    onUploadError={(error) => toast.error(error)}
+                    maxFiles={1}
+                    allowMultiple={false}
+                    maxSize={1024 * 1024} // 1MB
+                    className="mb-4"
+                    title="Upload Client Avatar"
+                    description="Drag and drop Client Avatar here, or click to browse"
+                    supportText="Supports: JPG, PNG (max 1MB) for avatar"
+                  />
+                  {clientAvatar && (
+                    <div className="mt-3">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white mb-2">Client Avatar:</p>
+                      <div className="flex items-center space-x-4">
+                        <div className="relative">
+                          <Image
+                            src={clientAvatar}
+                            alt="Client Avatar"
+                            width={64}
+                            height={64}
+                            className="w-16 h-16 object-cover rounded-full border-2 border-gray-200 dark:border-gray-700"
+                          />
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="absolute -top-2 -right-2 w-6 h-6 rounded-full p-0"
+                            onClick={() => {
+                              setClientAvatar('')
+                              form.setValue('client_testimonial.image', '')
+                            }}
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Avatar uploaded successfully</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-500">This will appear with the testimonial</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Action Buttons */}

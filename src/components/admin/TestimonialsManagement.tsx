@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Search, Plus, Edit, Trash2, Star, Calendar, MessageSquare } from 'lucide-react'
 import { type Testimonial } from '@/lib/api'
 
@@ -15,6 +16,7 @@ interface TestimonialsManagementProps {
   onAddTestimonial: () => void
   onEditTestimonial: (testimonial: Testimonial) => void
   onDeleteTestimonial: (id: string) => void
+  isLoading?: boolean
 }
 
 export function TestimonialsManagement({
@@ -23,7 +25,8 @@ export function TestimonialsManagement({
   onSearchChange,
   onAddTestimonial,
   onEditTestimonial,
-  onDeleteTestimonial
+  onDeleteTestimonial,
+  isLoading = false
 }: TestimonialsManagementProps) {
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
@@ -34,8 +37,7 @@ export function TestimonialsManagement({
     
     return testimonials.filter(testimonial =>
       testimonial.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      testimonial.review.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      testimonial.platform.toLowerCase().includes(searchTerm.toLowerCase())
+      testimonial.review.toLowerCase().includes(searchTerm.toLowerCase())
     )
   }, [testimonials, searchTerm])
 
@@ -57,6 +59,79 @@ export function TestimonialsManagement({
         }`}
       />
     ))
+  }
+
+  // Skeleton loading component
+  const TestimonialsSkeleton = () => (
+    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="bg-gray-50 dark:bg-gray-700 px-6 py-3 border-b border-gray-200 dark:border-gray-600">
+        <div className="grid grid-cols-12 gap-4">
+          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-4 w-12" />
+          <Skeleton className="h-4 w-16" />
+        </div>
+      </div>
+      <div className="divide-y divide-gray-200 dark:divide-gray-600">
+        {Array.from({ length: 5 }).map((_, index) => (
+          <div key={index} className="px-6 py-4">
+            <div className="grid grid-cols-12 gap-4 items-center">
+              <div className="col-span-4">
+                <div className="flex items-center space-x-3">
+                  <Skeleton className="w-10 h-10 rounded-full" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-3 w-16" />
+                  </div>
+                </div>
+              </div>
+              <div className="col-span-4">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-3/4 mt-1" />
+              </div>
+              <div className="col-span-2">
+                <div className="flex space-x-1">
+                  <Skeleton className="h-4 w-4" />
+                  <Skeleton className="h-4 w-4" />
+                  <Skeleton className="h-4 w-4" />
+                  <Skeleton className="h-4 w-4" />
+                  <Skeleton className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="col-span-1">
+                <Skeleton className="h-4 w-16" />
+              </div>
+              <div className="col-span-1">
+                <div className="flex space-x-1">
+                  <Skeleton className="h-8 w-8 rounded" />
+                  <Skeleton className="h-8 w-8 rounded" />
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <Skeleton className="h-8 w-80 mb-2" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+          <Skeleton className="h-10 w-36" />
+        </div>
+        <div className="flex items-center space-x-4">
+          <Skeleton className="h-10 w-64" />
+          <Skeleton className="h-4 w-32" />
+        </div>
+        <TestimonialsSkeleton />
+      </div>
+    )
   }
 
   return (
@@ -114,10 +189,10 @@ export function TestimonialsManagement({
           {/* Table Header */}
           <div className="bg-gray-50 dark:bg-gray-700 px-6 py-3 border-b border-gray-200 dark:border-gray-600">
             <div className="grid grid-cols-12 gap-4 text-sm font-medium text-gray-500 dark:text-gray-400">
-              <div className="col-span-3">Client</div>
+              <div className="col-span-4">Client</div>
               <div className="col-span-4">Review</div>
               <div className="col-span-2">Rating</div>
-              <div className="col-span-2">Date</div>
+              <div className="col-span-1">Date</div>
               <div className="col-span-1">Actions</div>
             </div>
           </div>
@@ -128,23 +203,30 @@ export function TestimonialsManagement({
               <div key={testimonial._id} className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                 <div className="grid grid-cols-12 gap-4 items-center">
                   {/* Client Info */}
-                  <div className="col-span-3">
+                  <div className="col-span-4">
                     <div className="flex items-center space-x-3">
                       <div className="flex-shrink-0">
-                        <div className="w-10 h-10 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center">
-                          <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                            {testimonial.name.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
+                        {(testimonial as Testimonial & { clientImage?: string }).clientImage ? (
+                          <Image
+                            src={(testimonial as Testimonial & { clientImage?: string }).clientImage!}
+                            alt={testimonial.name}
+                            width={40}
+                            height={40}
+                            className="w-10 h-10 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center">
+                            <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                              {testimonial.name.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                        )}
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                           {testimonial.name}
                         </p>
                         <div className="flex items-center space-x-2 mt-1">
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {testimonial.platform}
-                          </p>
                           {testimonial.featured && (
                             <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 text-xs">
                               Featured
@@ -158,7 +240,7 @@ export function TestimonialsManagement({
                   {/* Review */}
                   <div className="col-span-4">
                     <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
-                      "{testimonial.review}"
+                      &ldquo;{testimonial.review}&rdquo;
                     </p>
                   </div>
                   
@@ -173,10 +255,10 @@ export function TestimonialsManagement({
                   </div>
                   
                   {/* Date */}
-                  <div className="col-span-2">
+                  <div className="col-span-1">
                     <div className="flex items-center space-x-1 text-xs text-gray-500 dark:text-gray-400">
                       <Calendar className="w-3 h-3" />
-                      <span>{new Date(testimonial.date).toLocaleDateString()}</span>
+                      <span>{testimonial.date ? new Date(testimonial.date).toLocaleDateString() : 'N/A'}</span>
                     </div>
                   </div>
                   

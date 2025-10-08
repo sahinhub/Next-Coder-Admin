@@ -36,10 +36,11 @@ const navigation = [
 
 interface AppSidebarProps {
   collapsed?: boolean
+  onToggleCollapse?: () => void
 }
 
-export function AppSidebar({ collapsed = false }: AppSidebarProps) {
-  const { user, logout, changePassword } = useAuth()
+export function AppSidebar({ collapsed = false, }: AppSidebarProps) {
+  const { user, logout } = useAuth()
   const [currentPath, setCurrentPath] = useState('dashboard')
 
   // Update current path when hash changes
@@ -67,16 +68,27 @@ export function AppSidebar({ collapsed = false }: AppSidebarProps) {
   }
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-gray-900">
+    <div className={`flex flex-col h-full bg-white dark:bg-gray-900 transition-all duration-300 ${
+      collapsed ? 'w-16' : 'w-64'
+    }`}>
       {/* Header */}
-      <div className={`flex items-center gap-2 p-2.5 border-b border-gray-200 dark:border-gray-700`}>
-        <Link href="/">
-          <Image src="/We-Next-Coder.png" className='bg-gray-50 dark:bg-gray-600 rounded-lg p-2' alt="Logo" width={42} height={42} />
-        </Link>
-        {!collapsed && (
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white"> Next Coder</h2>
-        )}
-       
+      <div className={`flex items-center gap-2 p-2.5 border-b border-gray-200 dark:border-gray-700 ${
+        collapsed ? 'justify-center' : 'justify-between'
+      }`}>
+        <div className="flex items-center gap-2">
+          <Link href="/">
+            <Image 
+              src="/We-Next-Coder.png" 
+              className='bg-gray-50 dark:bg-gray-600 rounded-lg p-2' 
+              alt="Logo" 
+              width={collapsed ? 32 : 42} 
+              height={collapsed ? 32 : 42} 
+            />
+          </Link>
+          {!collapsed && (
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Next Coder</h2>
+          )}
+        </div>
       </div>
 
       {/* Navigation */}
@@ -99,7 +111,7 @@ export function AppSidebar({ collapsed = false }: AppSidebarProps) {
                 currentPath === item.href.replace('#', '')
                   ? 'bg-green-100 text-green-700 dark:bg-green-700 dark:text-green-100'
                   : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
-              }`}
+              } ${collapsed ? 'justify-center' : ''}`}
               title={collapsed ? item.name : undefined}
             >
               <item.icon className="h-5 w-5 flex-shrink-0" />
@@ -117,23 +129,28 @@ export function AppSidebar({ collapsed = false }: AppSidebarProps) {
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              className="w-full justify-start gap-3 h-auto p-2 hover:bg-gray-100 dark:hover:bg-gray-700"
+              className={`w-full h-auto p-2 hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                collapsed ? 'justify-center' : 'justify-start gap-3'
+              }`}
+              title={collapsed ? `${user?.username || 'Admin User'}` : undefined}
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-100 dark:bg-green-900">
-                <User className="h-4 w-4 text-green-600 dark:text-purple-400" />
+              <div className="flex flex-shrink-0 h-10 w-10 items-center justify-center rounded-full bg-purple-100 dark:bg-green-900">
+                <User className="h-6 w-6 text-green-600 dark:text-purple-400" />
               </div>
               {!collapsed && (
-                <div className="flex-1 text-left">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">{user?.username || 'Admin User'}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email || 'admin@wenextcoder.com'}</p>
-                  {user?.lastLogin && (
-                    <p className="text-xs text-gray-400 dark:text-gray-500">
-                      Last login: {new Date(user.lastLogin).toLocaleDateString()}
-                    </p>
-                  )}
-                </div>
+                <>
+                  <div className="flex-1 text-left">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">{user?.username || 'Admin User'}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email || 'admin@wenextcoder.com'}</p>
+                    {user?.lastLogin && (
+                      <p className="text-xs text-gray-400 dark:text-gray-500">
+                        Last login: {new Date(user.lastLogin).toLocaleDateString()}
+                      </p>
+                    )}
+                  </div>
+                  <ChevronUp className="h-4 w-4" />
+                </>
               )}
-              {!collapsed && <ChevronUp className="h-4 w-4" />}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent

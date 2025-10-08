@@ -187,7 +187,7 @@ export function CareersManagement({
                   </div>
                   <div className="flex items-center space-x-1">
                     <Calendar className="w-3 h-3" />
-                    <span>Posted {new Date(career.postedDate).toLocaleDateString()}</span>
+                    <span>Posted {career.postedDate ? new Date(career.postedDate).toLocaleDateString() : 'N/A'}</span>
                   </div>
                 </div>
 

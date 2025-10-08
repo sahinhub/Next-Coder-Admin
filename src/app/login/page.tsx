@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Eye, EyeOff, Loader2, Lock, Mail, User } from 'lucide-react'
-import Swal from 'sweetalert2'
+import toast from 'react-hot-toast'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -66,17 +66,19 @@ export default function LoginPage() {
         localStorage.setItem('admin-token', data.token)
         localStorage.setItem('admin-user', JSON.stringify(data.user))
         
-        await Swal.fire({
-          title: 'Login Successful!',
-          text: `Welcome back, ${data.user.username}!`,
-          icon: 'success',
-          timer: 2000,
-          showConfirmButton: false,
-          customClass: {
-            popup: 'dark:bg-gray-800 dark:text-white',
-            title: 'dark:text-white',
-            htmlContainer: 'dark:text-gray-300'
-          }
+        toast.success(`Welcome back, ${data.user.username}!`, {
+          duration: 3000,
+          position: 'bottom-right',
+          style: {
+            background: document.documentElement.classList.contains('dark') 
+              ? 'rgba(9, 222, 66,0.3)' 
+              : '#09de42',
+            color: '#fff',
+            borderRadius: '8px',
+            padding: '12px 16px',
+            fontSize: '14px',
+            fontWeight: '500',
+          },
         })
         
         router.push('/admin')
@@ -85,17 +87,17 @@ export default function LoginPage() {
       }
     } catch (error) {
       console.error('Login error:', error)
-      await Swal.fire({
-        title: 'Login Failed!',
-        text: error instanceof Error ? error.message : 'Invalid email or password',
-        icon: 'error',
-        confirmButtonColor: '#ef4444',
-        customClass: {
-          popup: 'dark:bg-gray-800 dark:text-white',
-          title: 'dark:text-white',
-          htmlContainer: 'dark:text-gray-300',
-          confirmButton: 'bg-red-600 hover:bg-red-700 text-white'
-        }
+      toast.error(error instanceof Error ? error.message : 'Invalid email or password', {
+        duration: 4000,
+        position: 'bottom-right',
+        style: {
+          background: '#ef4444',
+          color: '#fff',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          fontSize: '14px',
+          fontWeight: '500',
+        },
       })
     } finally {
       setIsLoading(false)
@@ -106,33 +108,33 @@ export default function LoginPage() {
     e.preventDefault()
     
     if (registerData.password !== registerData.confirmPassword) {
-      await Swal.fire({
-        title: 'Password Mismatch!',
-        text: 'Passwords do not match. Please try again.',
-        icon: 'error',
-        confirmButtonColor: '#ef4444',
-        customClass: {
-          popup: 'dark:bg-gray-800 dark:text-white',
-          title: 'dark:text-white',
-          htmlContainer: 'dark:text-gray-300',
-          confirmButton: 'bg-red-600 hover:bg-red-700 text-white'
-        }
+      toast.error('Passwords do not match. Please try again.', {
+        duration: 4000,
+        position: 'bottom-right',
+        style: {
+          background: '#ef4444',
+          color: '#fff',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          fontSize: '14px',
+          fontWeight: '500',
+        },
       })
       return
     }
 
     if (registerData.password.length < 6) {
-      await Swal.fire({
-        title: 'Password Too Short!',
-        text: 'Password must be at least 6 characters long.',
-        icon: 'warning',
-        confirmButtonColor: '#f59e0b',
-        customClass: {
-          popup: 'dark:bg-gray-800 dark:text-white',
-          title: 'dark:text-white',
-          htmlContainer: 'dark:text-gray-300',
-          confirmButton: 'bg-yellow-600 hover:bg-yellow-700 text-white'
-        }
+      toast.error('Password must be at least 6 characters long.', {
+        duration: 4000,
+        position: 'bottom-right',
+        style: {
+          background: '#f59e0b',
+          color: '#fff',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          fontSize: '14px',
+          fontWeight: '500',
+        },
       })
       return
     }
@@ -159,17 +161,19 @@ export default function LoginPage() {
         localStorage.setItem('admin-token', data.token)
         localStorage.setItem('admin-user', JSON.stringify(data.user))
         
-        await Swal.fire({
-          title: 'Registration Successful!',
-          text: `Welcome, ${data.user.username}! Your admin account has been created.`,
-          icon: 'success',
-          timer: 3000,
-          showConfirmButton: false,
-          customClass: {
-            popup: 'dark:bg-gray-800 dark:text-white',
-            title: 'dark:text-white',
-            htmlContainer: 'dark:text-gray-300'
-          }
+        toast.success(`Welcome, ${data.user.username}! Your admin account has been created.`, {
+          duration: 4000,
+          position: 'bottom-right',
+          style: {
+            background: document.documentElement.classList.contains('dark') 
+              ? 'rgba(9, 222, 66,0.3)' 
+              : '#09de42',
+            color: '#fff',
+            borderRadius: '8px',
+            padding: '12px 16px',
+            fontSize: '14px',
+            fontWeight: '500',
+          },
         })
         
         router.push('/admin')
@@ -178,17 +182,17 @@ export default function LoginPage() {
       }
     } catch (error) {
       console.error('Registration error:', error)
-      await Swal.fire({
-        title: 'Registration Failed!',
-        text: error instanceof Error ? error.message : 'Failed to create account',
-        icon: 'error',
-        confirmButtonColor: '#ef4444',
-        customClass: {
-          popup: 'dark:bg-gray-800 dark:text-white',
-          title: 'dark:text-white',
-          htmlContainer: 'dark:text-gray-300',
-          confirmButton: 'bg-red-600 hover:bg-red-700 text-white'
-        }
+      toast.error(error instanceof Error ? error.message : 'Failed to create account', {
+        duration: 4000,
+        position: 'bottom-right',
+        style: {
+          background: '#ef4444',
+          color: '#fff',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          fontSize: '14px',
+          fontWeight: '500',
+        },
       })
     } finally {
       setIsLoading(false)
