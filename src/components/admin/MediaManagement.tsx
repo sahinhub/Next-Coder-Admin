@@ -254,9 +254,9 @@ export function MediaManagement({ onUploadSuccess }: MediaManagementProps) {
   const [isDeleting, setIsDeleting] = useState(false)
   
   // Performance optimizations
-  const [visibleItems, setVisibleItems] = useState(50) // Virtual scrolling
-  const [isScrolling, setIsScrolling] = useState(false)
-  const scrollTimeoutRef = useRef<NodeJS.Timeout>()
+  const [visibleItems, setVisibleItems] = useState<number>(50) // Virtual scrolling
+  const [isScrolling, setIsScrolling] = useState<boolean>(false)
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Cloudinary sync functions
   const syncWithCloudinary = async () => {

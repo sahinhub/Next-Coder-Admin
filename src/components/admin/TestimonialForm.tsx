@@ -21,13 +21,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { X, Save, Star, Calendar, Info, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'

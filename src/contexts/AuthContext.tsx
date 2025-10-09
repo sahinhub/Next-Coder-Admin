@@ -1,8 +1,7 @@
 'use client'
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import React, { createContext, useState, useEffect, ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
-import Swal from 'sweetalert2'
 
 interface User {
   id: string

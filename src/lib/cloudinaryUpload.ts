@@ -216,7 +216,7 @@ export async function uploadImageWithProgress(
               etag: result.etag
             }
           })
-        } catch (error) {
+        } catch {
           reject(new Error('Invalid response from server'))
         }
       } else {
@@ -337,7 +337,7 @@ export function formatFileSize(bytes: number): string {
  * @param publicId - The Cloudinary public ID
  * @returns Promise with deletion result
  */
-export async function deleteCloudinaryImage(publicId: string): Promise<{ success: boolean; error?: string }> {
+export async function deleteCloudinaryImage(): Promise<{ success: boolean; error?: string }> {
   // Note: This requires server-side implementation with Cloudinary Admin API
   // For now, we'll just return a success response
   console.warn('Delete functionality requires server-side implementation with Cloudinary Admin API')

@@ -1,13 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { 
   RefreshCw, 
   TrendingUp, 
-  TrendingDown, 
   Eye, 
   Users, 
   Star, 
@@ -59,12 +58,10 @@ export function Analytics({
   onTabChange
 }: AnalyticsProps) {
   const [selectedPeriod, setSelectedPeriod] = useState<'7d' | '30d' | '90d' | '1y'>('30d')
-  const [viewMode, setViewMode] = useState<'overview' | 'detailed'>('overview')
 
   // Calculate additional metrics
   const totalProjects = projects.length
   const totalTestimonials = testimonials.length
-  const totalCareers = careers.length
   const averageRating = testimonials.length > 0 
     ? (testimonials.reduce((sum, t) => sum + t.rating, 0) / testimonials.length).toFixed(1)
     : '0.0'
@@ -72,15 +69,7 @@ export function Analytics({
   const featuredTestimonials = testimonials.filter(t => t.featured).length
   const activeCareers = careers.filter(c => c.status === 'active').length
 
-  // Simulate growth data
-  const growthData = {
-    '7d': { views: 1250, growth: 12.5 },
-    '30d': { views: 5200, growth: 8.3 },
-    '90d': { views: 15600, growth: 15.2 },
-    '1y': { views: 62400, growth: 22.1 }
-  }
 
-  const currentGrowth = growthData[selectedPeriod]
 
   return (
     <div className="space-y-6">
