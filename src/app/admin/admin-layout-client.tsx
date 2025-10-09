@@ -12,6 +12,7 @@ import { Dashboard } from '@/components/admin/Dashboard'
 import { PortfolioManagement } from '@/components/admin/PortfolioManagement'
 import { TestimonialsManagement } from '@/components/admin/TestimonialsManagement'
 import { CareersManagement } from '@/components/admin/CareersManagement'
+import { MediaManagement } from '@/components/admin/MediaManagement'
 import { Analytics } from '@/components/admin/Analytics'
 import { Settings } from '@/components/admin/Settings'
 import { type Project, type Testimonial, type Career } from '@/lib/api'
@@ -20,7 +21,7 @@ import Swal from 'sweetalert2'
 
 export default function AdminLayoutClient() {
   const { user } = useAuth()
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'portfolio' | 'testimonials' | 'careers' | 'analytics' | 'settings'>('dashboard')
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'portfolio' | 'testimonials' | 'careers' | 'media' | 'analytics' | 'settings'>('dashboard')
   const [searchTerm, setSearchTerm] = useState('')
   const [isDataLoading, setIsDataLoading] = useState(false)
   const [dataError, setDataError] = useState<string | null>(null)
@@ -142,8 +143,8 @@ export default function AdminLayoutClient() {
 
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#', '')
-      if (hash && ['dashboard', 'portfolio', 'testimonials', 'careers', 'analytics', 'settings'].includes(hash)) {
-        setActiveTab(hash as 'dashboard' | 'portfolio' | 'testimonials' | 'careers' | 'analytics' | 'settings')
+      if (hash && ['dashboard', 'portfolio', 'testimonials', 'careers', 'media', 'analytics', 'settings'].includes(hash)) {
+        setActiveTab(hash as 'dashboard' | 'portfolio' | 'testimonials' | 'careers' | 'media' | 'analytics' | 'settings')
       }
     }
 
@@ -734,6 +735,7 @@ export default function AdminLayoutClient() {
                 {activeTab === 'portfolio' && 'Portfolio Management'}
                 {activeTab === 'testimonials' && 'Testimonials Management'}
                 {activeTab === 'careers' && 'Careers Management'}
+                {activeTab === 'media' && 'Media Management'}
                 {activeTab === 'analytics' && 'Analytics'}
                 {activeTab === 'settings' && 'Settings'}
               </h1>
@@ -825,6 +827,16 @@ export default function AdminLayoutClient() {
               onAddCareer={() => { setEditingItem(null); setShowCareerForm(true); }}
               onEditCareer={(career) => handleEdit(career as unknown as Record<string, unknown>, 'career')}
               onDeleteCareer={(id) => handleDelete(id, 'career')}
+            />
+          )}
+
+          {/* Media Management */}
+          {activeTab === 'media' && (
+            <MediaManagement
+              onUploadSuccess={(url) => {
+                console.log('New media uploaded:', url)
+                // You can add logic here to refresh media list or update state
+              }}
             />
           )}
 

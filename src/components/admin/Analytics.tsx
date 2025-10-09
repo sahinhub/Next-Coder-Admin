@@ -211,7 +211,7 @@ export function Analytics({
                         {project.title}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {project.category.join(', ')}
+                        {project.categories.join(', ')}
                       </p>
                     </div>
                     <div className="flex items-center space-x-2">

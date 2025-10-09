@@ -2,9 +2,10 @@
  * Application Configuration
  */
 
-// ImageBB API Configuration
-export const IMAGEBB_API_KEY = 'f98ae7b402df230d1049fedaaf05d9cf'
-export const IMAGEBB_UPLOAD_URL = 'https://api.imgbb.com/1/upload'
+// Cloudinary Configuration
+export const CLOUDINARY_CLOUD_NAME = 'dzvhuak8p'
+export const CLOUDINARY_UPLOAD_PRESET = 'wenextcoder_admin' // Your custom upload preset
+export const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`
 
 // API Configuration
 export const API_BASE_URL = 'https://nextcoderapi.vercel.app'

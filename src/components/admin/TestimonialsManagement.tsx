@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -46,9 +46,9 @@ export function TestimonialsManagement({
   const startIndex = (currentPage - 1) * itemsPerPage
   const paginatedTestimonials = filteredTestimonials.slice(startIndex, startIndex + itemsPerPage)
 
-  const handlePageChange = (page: number) => {
+  const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page)
-  }
+  }, [])
 
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, i) => (

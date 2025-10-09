@@ -359,20 +359,19 @@ export interface Project {
   title: string
   slug: string
   description: string
-  category: string[]
+  categories: string[]
   technologies: string[]
   features: string[]
-  live_url?: string
+  liveUrl?: string
   thumbnail?: string
-  gallery?: string[]
-  client_testimonial?: {
-    feedback?: string
-    image?: string
+  images?: string[]
+  client?: {
     name?: string
-    role?: string
+    designation?: string
+    testimonial?: string
+    image?: string
   }
-  link?: string
-  date?: string
+  publishDate?: string
   createdAt?: string
   updatedAt?: string
 }

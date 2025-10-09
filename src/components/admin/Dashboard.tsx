@@ -152,7 +152,7 @@ export function Dashboard({
                   <p className="text-sm text-gray-500 dark:text-gray-400">{portfolio.description?.substring(0, 50)}...</p>
                 </div>
                 <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                  {Array.isArray(portfolio.category) ? portfolio.category[0] : portfolio.category || 'Project'}
+                  {Array.isArray(portfolio.categories) ? portfolio.categories[0] : portfolio.categories || 'Project'}
                 </Badge>
               </div>
             ))}

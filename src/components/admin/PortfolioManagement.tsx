@@ -41,10 +41,10 @@ export function PortfolioManagement({
   const filteredPortfolios = projects.filter(portfolio => {
     const titleMatch = portfolio.title.toLowerCase().includes(searchTerm.toLowerCase())
     const descriptionMatch = portfolio.description?.toLowerCase().includes(searchTerm.toLowerCase()) || false
-    const categoryMatch = Array.isArray(portfolio.category) 
-      ? portfolio.category.some(cat => String(cat).toLowerCase().includes(searchTerm.toLowerCase()))
-      : (portfolio.category && typeof portfolio.category === 'string' 
-          ? String(portfolio.category).toLowerCase().includes(searchTerm.toLowerCase()) 
+    const categoryMatch = Array.isArray(portfolio.categories) 
+      ? portfolio.categories.some(cat => String(cat).toLowerCase().includes(searchTerm.toLowerCase()))
+      : (portfolio.categories && typeof portfolio.categories === 'string' 
+          ? String(portfolio.categories).toLowerCase().includes(searchTerm.toLowerCase()) 
           : false)
     
     return titleMatch || descriptionMatch || categoryMatch
@@ -115,7 +115,7 @@ export function PortfolioManagement({
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Project</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Type</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Created</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Published</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Updated</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
                     </tr>
@@ -146,20 +146,20 @@ export function PortfolioManagement({
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex flex-wrap gap-1">
-                            {Array.isArray(portfolio.category) ? 
-                              portfolio.category.slice(0, 2).map((cat, index) => (
+                            {Array.isArray(portfolio.categories) ? 
+                              portfolio.categories.slice(0, 2).map((cat, index) => (
                                 <span key={index} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
                                   {cat}
                                 </span>
                               )) : (
                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                                  {portfolio.category}
+                                  {portfolio.categories}
                                 </span>
                               )
                             }
-                            {Array.isArray(portfolio.category) && portfolio.category.length > 2 && (
+                            {Array.isArray(portfolio.categories) && portfolio.categories.length > 2 && (
                               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
-                                +{portfolio.category.length - 2}
+                                +{portfolio.categories.length - 2}
                               </span>
                             )}
                           </div>
@@ -170,7 +170,7 @@ export function PortfolioManagement({
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                          {portfolio.createdAt ? new Date(portfolio.createdAt).toLocaleDateString() : 'N/A'}
+                          {portfolio.publishDate ? new Date(portfolio.publishDate).toLocaleDateString() : 'N/A'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                           {portfolio.updatedAt ? new Date(portfolio.updatedAt).toLocaleDateString() : 'N/A'}
@@ -226,14 +226,14 @@ export function PortfolioManagement({
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{portfolio.description}</p>
                         <div className="flex items-center justify-between mt-3">
                           <div className="flex flex-wrap gap-1">
-                            {Array.isArray(portfolio.category) ? 
-                              portfolio.category.slice(0, 2).map((cat, index) => (
+                            {Array.isArray(portfolio.categories) ? 
+                              portfolio.categories.slice(0, 2).map((cat, index) => (
                                 <span key={index} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
                                   {cat}
                                 </span>
                               )) : (
                                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                                  {portfolio.category}
+                                  {portfolio.categories}
                                 </span>
                               )
                             }

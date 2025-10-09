@@ -29,20 +29,19 @@ const formSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   slug: z.string().min(1, 'Slug is required'),
   description: z.string().min(10, 'Description must be at least 10 characters'),
-  category: z.array(z.string()).min(1, 'At least one category is required'),
+  categories: z.array(z.string()).min(1, 'At least one category is required'),
   technologies: z.array(z.string()).min(1, 'At least one technology is required'),
   features: z.array(z.string()).min(1, 'At least one feature is required'),
-  live_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  liveUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
   thumbnail: z.string().url('Must be a valid URL').optional().or(z.literal('')),
-  gallery: z.array(z.string()).optional(),
-  client_testimonial: z.object({
-    feedback: z.string().optional(),
-    image: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  images: z.array(z.string()).optional(),
+  client: z.object({
     name: z.string().optional(),
-    role: z.string().optional(),
+    designation: z.string().optional(),
+    testimonial: z.string().optional(),
+    image: z.string().url('Must be a valid URL').optional().or(z.literal('')),
   }).optional(),
-  link: z.string().url('Must be a valid URL').optional().or(z.literal('')),
-  date: z.string().optional(),
+  publishDate: z.string().optional(),
 })
 
 type FormData = z.infer<typeof formSchema>
@@ -57,7 +56,7 @@ interface PortfolioFormProps {
 export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }: PortfolioFormProps) {
   const [technologies, setTechnologies] = useState<string[]>((portfolio as Record<string, unknown>)?.technologies as string[] || [])
   const [features, setFeatures] = useState<string[]>((portfolio as Record<string, unknown>)?.features as string[] || [])
-  const [categories, setCategories] = useState<string[]>((portfolio as Record<string, unknown>)?.category as string[] || [])
+  const [categories, setCategories] = useState<string[]>((portfolio as Record<string, unknown>)?.categories as string[] || [])
   const [newTech, setNewTech] = useState('')
   const [newFeature, setNewFeature] = useState('')
   const [newCategory, setNewCategory] = useState('')
@@ -82,20 +81,19 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
       title: (portfolio as Record<string, unknown>)?.title as string || '',
       slug: (portfolio as Record<string, unknown>)?.slug as string || '',
       description: (portfolio as Record<string, unknown>)?.description as string || '',
-      category: (portfolio as Record<string, unknown>)?.category as string[] || [],
+      categories: (portfolio as Record<string, unknown>)?.categories as string[] || [],
       technologies: (portfolio as Record<string, unknown>)?.technologies as string[] || [],
       features: (portfolio as Record<string, unknown>)?.features as string[] || [],
-      live_url: (portfolio as Record<string, unknown>)?.live_url as string || '',
+      liveUrl: (portfolio as Record<string, unknown>)?.liveUrl as string || '',
       thumbnail: (portfolio as Record<string, unknown>)?.thumbnail as string || '',
-      gallery: (portfolio as Record<string, unknown>)?.gallery as string[] || [],
-      client_testimonial: (portfolio as Record<string, unknown>)?.client_testimonial as object || {
-        feedback: '',
-        image: '',
+      images: (portfolio as Record<string, unknown>)?.images as string[] || [],
+      client: (portfolio as Record<string, unknown>)?.client as object || {
         name: '',
-        role: '',
+        designation: '',
+        testimonial: '',
+        image: '',
       },
-      link: (portfolio as Record<string, unknown>)?.link as string || '',
-      date: (portfolio as Record<string, unknown>)?.date as string || new Date().toISOString(),
+      publishDate: (portfolio as Record<string, unknown>)?.publishDate as string || new Date().toISOString(),
     },
   })
 
@@ -134,7 +132,7 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
     if (categoryToAdd && !categories.includes(categoryToAdd)) {
       const updated = [...categories, categoryToAdd]
       setCategories(updated)
-      form.setValue('category', updated)
+      form.setValue('categories', updated)
       if (!category) {
         setNewCategory('')
       }
@@ -144,7 +142,7 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
   const removeCategory = (category: string) => {
     const updated = categories.filter(c => c !== category)
     setCategories(updated)
-    form.setValue('category', updated)
+    form.setValue('categories', updated)
   }
 
   const handleImageUpload = (result: ImageUploadResponse) => {
@@ -171,8 +169,8 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
   const handleGalleryUpload = (result: ImageUploadResponse) => {
     if (result.data?.url) {
       setGalleryImages(prev => [...prev, result.data!.url])
-      const currentGallery = form.getValues('gallery') || []
-      form.setValue('gallery', [...currentGallery, result.data!.url])
+      const currentGallery = form.getValues('images') || []
+      form.setValue('images', [...currentGallery, result.data!.url])
       toast.success('Gallery image uploaded successfully!', {
         duration: 3000,
         position: 'bottom-right',
@@ -193,7 +191,7 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
   const handleClientAvatarUpload = (result: ImageUploadResponse) => {
     if (result.data?.url) {
       setClientAvatar(result.data!.url)
-      form.setValue('client_testimonial.image', result.data!.url)
+      form.setValue('client.image', result.data!.url)
       toast.success('Client avatar uploaded successfully!', {
         duration: 3000,
         position: 'bottom-right',
@@ -214,7 +212,7 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
   const removeGalleryImage = (index: number) => {
     const updated = galleryImages.filter((_, i) => i !== index)
     setGalleryImages(updated)
-    form.setValue('gallery', updated)
+    form.setValue('images', updated)
   }
 
 
@@ -228,43 +226,41 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
   const onSubmit = async (data: FormData) => {
     setIsLoading(true)
     try {
-      console.log('Portfolio form submitted:', data)
       
-      // Transform data to match MongoDB structure with ImageBB URLs
+      // Transform data to match MongoDB structure with Cloudinary URLs
       const portfolioData = {
         title: data.title,
         slug: data.slug || data.title.toLowerCase().replace(/\s+/g, '-'),
         description: data.description,
-        category: data.category,
+        categories: data.categories,
         technologies: data.technologies,
         features: data.features,
-        live_url: data.live_url || '',
-        // ImageBB hosted URLs
-        thumbnail: data.thumbnail || '', // ImageBB URL for main project image
-        gallery: data.gallery || [], // Array of ImageBB URLs for project gallery
-        client_testimonial: {
-          feedback: data.client_testimonial?.feedback || '',
-          image: data.client_testimonial?.image || '', // ImageBB URL for client avatar
-          name: data.client_testimonial?.name || '',
-          role: data.client_testimonial?.role || '',
+        liveUrl: data.liveUrl || '',
+        // Cloudinary hosted URLs
+        thumbnail: data.thumbnail || '', // Cloudinary URL for main project image
+        images: data.images || [], // Array of Cloudinary URLs for project gallery
+        client: {
+          name: data.client?.name || '',
+          designation: data.client?.designation || '',
+          testimonial: data.client?.testimonial || '',
+          image: data.client?.image || '', // Cloudinary URL for client avatar
         },
-        link: data.link || '',
-        date: data.date || new Date().toISOString(),
-        // Additional metadata for ImageBB images
+        publishDate: data.publishDate || new Date().toISOString(),
+        // Additional metadata for Cloudinary images
         imageMetadata: {
           thumbnail: data.thumbnail ? {
             url: data.thumbnail,
-            source: 'imagebb',
+            source: 'cloudinary',
             uploadedAt: new Date().toISOString()
           } : null,
-          gallery: (data.gallery || []).map((url: string) => ({
+          images: (data.images || []).map((url: string) => ({
             url,
-            source: 'imagebb',
+            source: 'cloudinary',
             uploadedAt: new Date().toISOString()
           })),
-          clientAvatar: data.client_testimonial?.image ? {
-            url: data.client_testimonial.image,
-            source: 'imagebb',
+          clientAvatar: data.client?.image ? {
+            url: data.client.image,
+            source: 'cloudinary',
             uploadedAt: new Date().toISOString()
           } : null
         }
@@ -522,7 +518,7 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
                           size="sm"
                           onClick={() => {
                             setGalleryImages([])
-                            form.setValue('gallery', [])
+                            form.setValue('images', [])
                           }}
                           className="text-red-600 hover:text-red-700"
                         >
@@ -556,7 +552,7 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
                                     // Move image to front
                                     const newOrder = [url, ...galleryImages.filter((_, i) => i !== index)]
                                     setGalleryImages(newOrder)
-                                    form.setValue('gallery', newOrder)
+                                    form.setValue('images', newOrder)
                                   }}
                                 >
                                   ↑
@@ -583,7 +579,7 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="live_url"
+                  name="liveUrl"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Live URL</FormLabel>
@@ -596,12 +592,16 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
                 />
                 <FormField
                   control={form.control}
-                  name="link"
+                  name="publishDate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>GitHub URL</FormLabel>
+                      <FormLabel>Publish Date</FormLabel>
                       <FormControl>
-                        <Input placeholder="https://github.com/username/repo" {...field} />
+                        <Input 
+                          type="datetime-local" 
+                          placeholder="Select publish date" 
+                          {...field} 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -667,7 +667,7 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="client_testimonial.name"
+                  name="client.name"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Client Name *</FormLabel>
@@ -680,12 +680,12 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
                 />
                 <FormField
                   control={form.control}
-                  name="client_testimonial.role"
+                  name="client.designation"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Client Role *</FormLabel>
+                      <FormLabel>Client Designation *</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., Owner" {...field} />
+                        <Input placeholder="e.g., Business Owner" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -697,7 +697,7 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
               <div className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="client_testimonial.feedback"
+                  name="client.testimonial"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Client Testimonial</FormLabel>
@@ -748,7 +748,7 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
                             className="absolute -top-2 -right-2 w-6 h-6 rounded-full p-0"
                             onClick={() => {
                               setClientAvatar('')
-                              form.setValue('client_testimonial.image', '')
+                              form.setValue('client.image', '')
                             }}
                           >
                             <X className="w-3 h-3" />

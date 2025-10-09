@@ -13,6 +13,7 @@ import {
   User,
   ChevronUp,
   LogOut,
+  Image as ImageIcon,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -30,6 +31,7 @@ const navigation = [
   { name: "Portfolio", icon: Briefcase, href: "#portfolio" },
   { name: "Testimonials", icon: MessageSquare, href: "#testimonials" },
   { name: "Careers", icon: Users, href: "#careers" },
+  { name: "Media", icon: ImageIcon, href: "#media" },
   { name: "Analytics", icon: BarChart3, href: "#analytics" },
   { name: "Settings", icon: Settings, href: "#settings" },
 ]
@@ -47,7 +49,7 @@ export function AppSidebar({ collapsed = false, }: AppSidebarProps) {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#', '')
-      if (hash && ['dashboard', 'portfolio', 'testimonials', 'careers', 'analytics', 'settings'].includes(hash)) {
+      if (hash && ['dashboard', 'portfolio', 'testimonials', 'careers', 'media', 'analytics', 'settings'].includes(hash)) {
         setCurrentPath(hash)
       }
     }
