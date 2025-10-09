@@ -33,7 +33,8 @@ import { ImageUpload } from '@/components/ui/ImageUpload'
 import { type ImageUploadResponse } from '@/lib/imageUpload'
 import { 
   CloudinarySyncService, 
-  getCloudinaryMediaByFolder,
+  getAllCloudinaryMedia,
+  searchCloudinaryMedia,
   convertCloudinaryResourceToMediaItem,
   deleteCloudinaryMedia,
   type MediaItem
@@ -262,19 +263,18 @@ export function MediaManagement({ onUploadSuccess }: MediaManagementProps) {
   const syncWithCloudinary = async () => {
     setIsSyncing(true)
     try {
-      // Fetch media from portfolios folder
-      const response = await getCloudinaryMediaByFolder('portfolios')
-      const cloudinaryMedia = response.resources.map(resource => convertCloudinaryResourceToMediaItem(resource, 'portfolios'))
+      // Fetch all media from Cloudinary (not just portfolios)
+      const response = await getAllCloudinaryMedia()
+      const cloudinaryMedia = response.resources.map(resource => convertCloudinaryResourceToMediaItem(resource))
       
-      // Replace current media with portfolios folder content
+      // Replace current media with all Cloudinary content
       setMediaItems(cloudinaryMedia)
       
       setLastSyncTime(new Date())
       // Keep user on same page and preserve their current state
-      toast.success(`Synced ${cloudinaryMedia.length} media items from portfolios folder`)
+      // Silently sync media items from Cloudinary
     } catch (error) {
       console.error('Error syncing with Cloudinary:', error)
-      toast.error('Failed to sync with Cloudinary')
     } finally {
       setIsSyncing(false)
     }
@@ -283,20 +283,17 @@ export function MediaManagement({ onUploadSuccess }: MediaManagementProps) {
   const searchCloudinaryMediaQuery = async (query: string) => {
     setIsSyncing(true)
     try {
-      // Search within portfolios folder
-      const response = await getCloudinaryMediaByFolder('portfolios', {
-        expression: `resource_type:image AND ${query}`
-      })
-      const cloudinaryMedia = response.resources.map(resource => convertCloudinaryResourceToMediaItem(resource, 'portfolios'))
+      // Search all media from Cloudinary
+      const response = await searchCloudinaryMedia(query)
+      const cloudinaryMedia = response.resources.map(resource => convertCloudinaryResourceToMediaItem(resource))
       
       // Replace current media with search results
       setMediaItems(cloudinaryMedia)
       setLastSyncTime(new Date())
       // Keep user on same page and preserve their current state
-      toast.success(`Found ${cloudinaryMedia.length} media items in portfolios`)
+      // Silently search media items from Cloudinary
     } catch (error) {
       console.error('Error searching Cloudinary:', error)
-      toast.error('Failed to search Cloudinary')
     } finally {
       setIsSyncing(false)
     }
@@ -304,20 +301,17 @@ export function MediaManagement({ onUploadSuccess }: MediaManagementProps) {
 
   // Load media on component mount
   useEffect(() => {
-    // Start with Cloudinary sync for portfolios only
+    // Start with Cloudinary sync for all media
     syncWithCloudinary()
     
-    // Enable auto-sync to keep portfolios content updated
+    // Enable auto-sync to keep all content updated
     syncService.startAutoSync(30, (newMedia) => {
-      // Filter to only include portfolios folder items
-      const portfoliosMedia = newMedia.filter(item => item.folder === 'portfolios')
-      
       setMediaItems(prev => {
         const existingIds = new Set(prev.map(item => item.id))
-        const newItems = portfoliosMedia.filter(item => !existingIds.has(item.id))
+        const newItems = newMedia.filter(item => !existingIds.has(item.id))
         
         if (newItems.length > 0) {
-          toast.success(`Auto-sync: Added ${newItems.length} new portfolio items`)
+          // Auto-sync: Silently added new media items
         }
         
         // Preserve user's current state during auto-sync
@@ -348,7 +342,7 @@ export function MediaManagement({ onUploadSuccess }: MediaManagementProps) {
         caption: '',
         description: '',
         tags: [],
-        folder: 'portfolios',
+        folder: 'media',
         featured: false,
         favorite: false,
         archived: false,
@@ -559,7 +553,7 @@ export function MediaManagement({ onUploadSuccess }: MediaManagementProps) {
         item.tags?.some(tag => searchRegex.test(tag))
       
       const matchesFilter = item.source === 'cloudinary'
-      const matchesFolder = item.folder === 'portfolios'
+      const matchesFolder = true // Show all media now
       
       // Optimize date filtering
       let matchesDate = true
@@ -657,9 +651,9 @@ export function MediaManagement({ onUploadSuccess }: MediaManagementProps) {
       {/* WordPress-like Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Portfolios Media Library</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Media Library</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            {filteredMedia.length} of {mediaItems.length} items from portfolios folder
+            {filteredMedia.length} of {mediaItems.length} items from Cloudinary
             {selectedItems.length > 0 && ` • ${selectedItems.length} selected`}
             {lastSyncTime && (
               <span className="ml-2 text-xs">
@@ -676,7 +670,7 @@ export function MediaManagement({ onUploadSuccess }: MediaManagementProps) {
             disabled={isSyncing}
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
-            {isSyncing ? 'Syncing...' : 'Sync Portfolios'}
+            {isSyncing ? 'Syncing...' : 'Sync Media'}
           </Button>
           <Button
             variant="outline"

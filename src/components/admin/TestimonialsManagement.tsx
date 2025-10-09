@@ -4,7 +4,6 @@ import { useState, useMemo, useCallback } from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Search, Plus, Edit, Trash2, Star, Calendar, MessageSquare } from 'lucide-react'
 import { type Testimonial } from '@/lib/api'
@@ -54,50 +53,48 @@ export function TestimonialsManagement({
     return Array.from({ length: 5 }, (_, i) => (
       <Star
         key={i}
-        className={`w-4 h-4 ${
+        className={`w-3 h-3 ${
           i < rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
         }`}
       />
     ))
   }
 
+
   // Skeleton loading component
   const TestimonialsSkeleton = () => (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
       <div className="bg-gray-50 dark:bg-gray-700 px-6 py-3 border-b border-gray-200 dark:border-gray-600">
-        <div className="grid grid-cols-12 gap-4">
+        <div className="grid grid-cols-10 gap-4">
           <Skeleton className="h-4 w-16" />
           <Skeleton className="h-4 w-20" />
           <Skeleton className="h-4 w-16" />
-          <Skeleton className="h-4 w-12" />
           <Skeleton className="h-4 w-16" />
         </div>
       </div>
       <div className="divide-y divide-gray-200 dark:divide-gray-600">
         {Array.from({ length: 5 }).map((_, index) => (
           <div key={index} className="px-6 py-4">
-            <div className="grid grid-cols-12 gap-4 items-center">
+            <div className="grid grid-cols-10 gap-4 items-center">
               <div className="col-span-4">
                 <div className="flex items-center space-x-3">
                   <Skeleton className="w-10 h-10 rounded-full" />
                   <div className="space-y-2">
                     <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-3 w-16" />
+                    <div className="flex space-x-1">
+                      <Skeleton className="h-3 w-3" />
+                      <Skeleton className="h-3 w-3" />
+                      <Skeleton className="h-3 w-3" />
+                      <Skeleton className="h-3 w-3" />
+                      <Skeleton className="h-3 w-3" />
+                      <Skeleton className="h-3 w-8" />
+                    </div>
                   </div>
                 </div>
               </div>
               <div className="col-span-4">
                 <Skeleton className="h-4 w-full" />
                 <Skeleton className="h-4 w-3/4 mt-1" />
-              </div>
-              <div className="col-span-2">
-                <div className="flex space-x-1">
-                  <Skeleton className="h-4 w-4" />
-                  <Skeleton className="h-4 w-4" />
-                  <Skeleton className="h-4 w-4" />
-                  <Skeleton className="h-4 w-4" />
-                  <Skeleton className="h-4 w-4" />
-                </div>
               </div>
               <div className="col-span-1">
                 <Skeleton className="h-4 w-16" />
@@ -188,10 +185,9 @@ export function TestimonialsManagement({
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
           {/* Table Header */}
           <div className="bg-gray-50 dark:bg-gray-700 px-6 py-3 border-b border-gray-200 dark:border-gray-600">
-            <div className="grid grid-cols-12 gap-4 text-sm font-medium text-gray-500 dark:text-gray-400">
+            <div className="grid grid-cols-10 gap-4 text-sm font-medium text-gray-500 dark:text-gray-400">
               <div className="col-span-4">Client</div>
               <div className="col-span-4">Review</div>
-              <div className="col-span-2">Rating</div>
               <div className="col-span-1">Date</div>
               <div className="col-span-1">Actions</div>
             </div>
@@ -201,7 +197,7 @@ export function TestimonialsManagement({
           <div className="divide-y divide-gray-200 dark:divide-gray-600">
             {paginatedTestimonials.map((testimonial) => (
               <div key={testimonial._id} className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                <div className="grid grid-cols-12 gap-4 items-center">
+                <div className="grid grid-cols-10 gap-4 items-center">
                   {/* Client Info */}
                   <div className="col-span-4">
                     <div className="flex items-center space-x-3">
@@ -226,12 +222,11 @@ export function TestimonialsManagement({
                         <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                           {testimonial.name}
                         </p>
-                        <div className="flex items-center space-x-2 mt-1">
-                          {testimonial.featured && (
-                            <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 text-xs">
-                              Featured
-                            </Badge>
-                          )}
+                        <div className="flex items-center space-x-1 mt-1">
+                          {renderStars(testimonial.rating)}
+                          <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
+                            {testimonial.rating}/5
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -244,15 +239,6 @@ export function TestimonialsManagement({
                     </p>
                   </div>
                   
-                  {/* Rating */}
-                  <div className="col-span-2">
-                    <div className="flex items-center space-x-1">
-                      {renderStars(testimonial.rating)}
-                      <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
-                        ({testimonial.rating}/5)
-                      </span>
-                    </div>
-                  </div>
                   
                   {/* Date */}
                   <div className="col-span-1">

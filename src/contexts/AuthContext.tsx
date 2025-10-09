@@ -28,6 +28,16 @@ interface AuthProviderProps {
   children: ReactNode
 }
 
+// Utility function to safely clear localStorage
+const clearAuthStorage = () => {
+  try {
+    localStorage.removeItem('admin-token')
+    localStorage.removeItem('admin-user')
+  } catch (error) {
+    console.error('Error clearing auth storage:', error)
+  }
+}
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null)
   const [token, setToken] = useState<string | null>(null)
@@ -50,17 +60,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       .then(data => {
         if (data.success) {
           setToken(storedToken)
-          setUser(JSON.parse(storedUser))
+          try {
+            setUser(JSON.parse(storedUser))
+          } catch (parseError) {
+            console.error('Error parsing stored user data:', parseError)
+            // Clear corrupted data
+            clearAuthStorage()
+            setUser(null)
+            setToken(null)
+          }
         } else {
           // Token is invalid, clear storage
-          localStorage.removeItem('admin-token')
-          localStorage.removeItem('admin-user')
+          clearAuthStorage()
         }
       })
       .catch(() => {
         // Network error or invalid token
-        localStorage.removeItem('admin-token')
-        localStorage.removeItem('admin-user')
+        clearAuthStorage()
       })
       .finally(() => {
         setIsLoading(false)
@@ -139,8 +155,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } finally {
       setUser(null)
       setToken(null)
-      localStorage.removeItem('admin-token')
-      localStorage.removeItem('admin-user')
+      clearAuthStorage()
       router.push('/login')
     }
   }

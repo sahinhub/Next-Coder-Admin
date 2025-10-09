@@ -21,81 +21,268 @@ import {
 } from '@/components/ui/form'
 import { Badge } from '@/components/ui/badge'
 import { ImageUpload } from '@/components/ui/ImageUpload'
-import { X, Plus, Save } from 'lucide-react'
+import { MediaPicker } from '@/components/ui/MediaPicker'
+import { X, Plus, Save, Image as ImageIcon } from 'lucide-react'
 import { type ImageUploadResponse } from '@/lib/imageUpload'
-import { PORTFOLIO_ENDPOINTS } from '@/lib/config'
+import { projectsApi } from '@/lib/api'
+import { type MediaItem } from '@/lib/cloudinaryApi'
 
 const formSchema = z.object({
   title: z.string().min(1, 'Title is required'),
-  slug: z.string().min(1, 'Slug is required'),
+  slug: z.string().optional(),
   description: z.string().min(10, 'Description must be at least 10 characters'),
   categories: z.array(z.string()).min(1, 'At least one category is required'),
   technologies: z.array(z.string()).min(1, 'At least one technology is required'),
   features: z.array(z.string()).min(1, 'At least one feature is required'),
-  liveUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
-  thumbnail: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  liveUrl: z.string().optional(),
+  thumbnail: z.string().optional(),
   images: z.array(z.string()).optional(),
   client: z.object({
     name: z.string().optional(),
     designation: z.string().optional(),
     testimonial: z.string().optional(),
-    image: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+    image: z.string().optional(),
   }).optional(),
-  publishDate: z.string().optional(),
 })
 
 type FormData = z.infer<typeof formSchema>
 
+// Type for portfolio data that can come from API with various field name formats
+interface PortfolioData {
+  _id?: string
+  title?: string
+  slug?: string
+  description?: string
+  categories?: string[]
+  category?: string[] // Backward compatibility
+  technologies?: string[]
+  features?: string[]
+  liveUrl?: string
+  live_url?: string // Backward compatibility
+  thumbnail?: string
+  images?: string[]
+  gallery?: string[] // Backward compatibility
+  client?: {
+    name?: string
+    designation?: string
+    testimonial?: string
+    image?: string
+  }
+  publishDate?: string
+  status?: 'draft' | 'published'
+  createdAt?: string
+  updatedAt?: string
+}
+
 interface PortfolioFormProps {
   onClose: () => void
-  portfolio?: FormData | (Record<string, unknown> & { _id?: string })
+  portfolio?: PortfolioData
   isEdit?: boolean
   onSuccess?: () => void
 }
 
 export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }: PortfolioFormProps) {
-  const [technologies, setTechnologies] = useState<string[]>((portfolio as Record<string, unknown>)?.technologies as string[] || [])
-  const [features, setFeatures] = useState<string[]>((portfolio as Record<string, unknown>)?.features as string[] || [])
-  const [categories, setCategories] = useState<string[]>((portfolio as Record<string, unknown>)?.categories as string[] || [])
+  const [technologies, setTechnologies] = useState<string[]>(portfolio?.technologies || [])
+  const [features, setFeatures] = useState<string[]>(portfolio?.features || [])
+  const [categories, setCategories] = useState<string[]>(() => {
+    // Handle both 'categories' and 'category' fields for backward compatibility
+    const categories = portfolio?.categories || portfolio?.category || []
+    return Array.isArray(categories) ? categories : [categories]
+  })
   const [newTech, setNewTech] = useState('')
   const [newFeature, setNewFeature] = useState('')
   const [newCategory, setNewCategory] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isClosing, setIsClosing] = useState(false)
   const [isOpening, setIsOpening] = useState(true)
-  const [uploadedImages, setUploadedImages] = useState<string[]>([])
-  const [galleryImages, setGalleryImages] = useState<string[]>([])
-  const [clientAvatar, setClientAvatar] = useState<string>('')
-
-  // Handle opening animation
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsOpening(false)
-    }, 10) // Small delay to ensure the element is rendered
-    return () => clearTimeout(timer)
-  }, [])
+  const [clickOutsideEnabled, setClickOutsideEnabled] = useState(false)
+  const [uploadedImages, setUploadedImages] = useState<string[]>(() => {
+    // Initialize with thumbnail if available
+    return portfolio?.thumbnail ? [portfolio.thumbnail] : []
+  })
+  const [galleryImages, setGalleryImages] = useState<string[]>(() => {
+    // Handle both 'images' and 'gallery' fields for backward compatibility
+    const images = portfolio?.images || portfolio?.gallery || []
+    return Array.isArray(images) ? images : [images]
+  })
+  const [clientAvatar, setClientAvatar] = useState<string>(() => {
+    // Initialize with client image if available
+    return portfolio?.client?.image || ''
+  })
+  const [showMediaPicker, setShowMediaPicker] = useState(false)
+  const [mediaPickerType, setMediaPickerType] = useState<'image' | 'video' | 'audio' | 'all'>('image')
+  const [mediaPickerTarget, setMediaPickerTarget] = useState<'featured' | 'gallery' | 'client'>('featured')
+  const [hasSelectedThumbnail, setHasSelectedThumbnail] = useState(() => {
+    return !!portfolio?.thumbnail
+  })
+  const [hasSelectedGallery, setHasSelectedGallery] = useState(() => {
+    const images = portfolio?.images || portfolio?.gallery || []
+    return Array.isArray(images) ? images.length > 0 : !!images
+  })
+  const [hasSelectedClientAvatar, setHasSelectedClientAvatar] = useState(() => {
+    return !!portfolio?.client?.image
+  })
+  const [isDraft, setIsDraft] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      title: (portfolio as Record<string, unknown>)?.title as string || '',
-      slug: (portfolio as Record<string, unknown>)?.slug as string || '',
-      description: (portfolio as Record<string, unknown>)?.description as string || '',
-      categories: (portfolio as Record<string, unknown>)?.categories as string[] || [],
-      technologies: (portfolio as Record<string, unknown>)?.technologies as string[] || [],
-      features: (portfolio as Record<string, unknown>)?.features as string[] || [],
-      liveUrl: (portfolio as Record<string, unknown>)?.liveUrl as string || '',
-      thumbnail: (portfolio as Record<string, unknown>)?.thumbnail as string || '',
-      images: (portfolio as Record<string, unknown>)?.images as string[] || [],
-      client: (portfolio as Record<string, unknown>)?.client as object || {
+      title: portfolio?.title || '',
+      slug: portfolio?.slug || '',
+      description: portfolio?.description || '',
+      categories: (() => {
+        // Handle both 'categories' and 'category' fields for backward compatibility
+        const categories = portfolio?.categories || portfolio?.category || []
+        return Array.isArray(categories) ? categories : [categories]
+      })(),
+      technologies: portfolio?.technologies || [],
+      features: portfolio?.features || [],
+      liveUrl: (() => {
+        // Handle both 'liveUrl' and 'live_url' fields for backward compatibility
+        return portfolio?.liveUrl || portfolio?.live_url || ''
+      })(),
+      thumbnail: portfolio?.thumbnail || '',
+      images: (() => {
+        // Handle both 'images' and 'gallery' fields for backward compatibility
+        const images = portfolio?.images || portfolio?.gallery || []
+        return Array.isArray(images) ? images : [images]
+      })(),
+      client: portfolio?.client || {
         name: '',
         designation: '',
         testimonial: '',
         image: '',
       },
-      publishDate: (portfolio as Record<string, unknown>)?.publishDate as string || new Date().toISOString(),
     },
   })
+
+  // Handle opening animation
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsOpening(false)
+      setClickOutsideEnabled(true) // Enable click outside after animation
+    }, 300) // Wait for animation to complete
+    return () => clearTimeout(timer)
+  }, [])
+
+  // Auto-save draft functionality
+  useEffect(() => {
+    const saveDraft = async () => {
+      setIsSaving(true)
+      const formData = form.getValues()
+      const draftData = {
+        ...formData,
+        uploadedImages,
+        galleryImages,
+        clientAvatar,
+        isDraft: true,
+        status: 'draft',
+        lastSaved: new Date().toISOString()
+      }
+      localStorage.setItem('portfolio-draft', JSON.stringify(draftData))
+      setIsDraft(true)
+      
+      // Show saving indicator briefly
+      setTimeout(() => setIsSaving(false), 1000)
+    }
+
+    // Auto-save every 15 seconds
+    const interval = setInterval(saveDraft, 15000)
+    
+    // Save on form changes (debounced)
+    const subscription = form.watch(() => {
+      const timeoutId = setTimeout(saveDraft, 3000) // Debounce for 3 seconds
+      return () => clearTimeout(timeoutId)
+    })
+
+    return () => {
+      clearInterval(interval)
+      subscription.unsubscribe()
+    }
+  }, [form, uploadedImages, galleryImages, clientAvatar])
+
+  // Load existing portfolio data when editing
+  useEffect(() => {
+    if (isEdit && portfolio) {
+      console.log('Loading portfolio data for editing:', portfolio)
+      
+      // Handle both 'categories' and 'category' fields for backward compatibility
+      const categories = portfolio.categories || portfolio.category || []
+      const categoryArray = Array.isArray(categories) ? categories : [categories]
+      
+      // Handle both 'images' and 'gallery' fields for backward compatibility
+      const images = portfolio.images || portfolio.gallery || []
+      const imageArray = Array.isArray(images) ? images : [images]
+      
+      // Handle both 'liveUrl' and 'live_url' fields for backward compatibility
+      const liveUrl = portfolio.liveUrl || portfolio.live_url || ''
+      
+      // Load form data
+      form.reset({
+        title: portfolio.title || '',
+        slug: portfolio.slug || '',
+        description: portfolio.description || '',
+        categories: categoryArray,
+        technologies: portfolio.technologies || [],
+        features: portfolio.features || [],
+        liveUrl: liveUrl,
+        thumbnail: portfolio.thumbnail || '',
+        images: imageArray,
+        client: portfolio.client || {
+          name: '',
+          designation: '',
+          testimonial: '',
+          image: '',
+        },
+      })
+      
+      // Load state data
+      setTechnologies(portfolio.technologies || [])
+      setFeatures(portfolio.features || [])
+      setCategories(categoryArray)
+      
+      // Load images
+      if (portfolio.thumbnail) {
+        setUploadedImages([portfolio.thumbnail])
+        setHasSelectedThumbnail(true)
+      }
+      
+      if (imageArray.length > 0) {
+        setGalleryImages(imageArray)
+        setHasSelectedGallery(true)
+      }
+      
+      if (portfolio.client?.image) {
+        setClientAvatar(portfolio.client.image)
+        setHasSelectedClientAvatar(true)
+      }
+    }
+  }, [isEdit, portfolio, form])
+
+  // Load draft on component mount
+  useEffect(() => {
+    const savedDraft = localStorage.getItem('portfolio-draft')
+    if (savedDraft && !isEdit) {
+      try {
+        const draftData = JSON.parse(savedDraft)
+        if (draftData.isDraft) {
+          // Restore form data
+          form.reset(draftData)
+          setUploadedImages(draftData.uploadedImages || [])
+          setGalleryImages(draftData.galleryImages || [])
+          setClientAvatar(draftData.clientAvatar || '')
+          setTechnologies(draftData.technologies || [])
+          setFeatures(draftData.features || [])
+          setCategories(draftData.categories || [])
+          setIsDraft(true)
+          // Draft restored from previous session
+        }
+      } catch (error) {
+        console.error('Error loading draft:', error)
+      }
+    }
+  }, [form, isEdit])
 
   const addTechnology = () => {
     if (newTech.trim() && !technologies.includes(newTech.trim())) {
@@ -149,6 +336,7 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
     if (result.data?.url) {
       setUploadedImages(prev => [...prev, result.data!.url])
       form.setValue('thumbnail', result.data!.url)
+      setHasSelectedThumbnail(true)
       toast.success('Image uploaded successfully!', {
         duration: 3000,
         position: 'bottom-right',
@@ -171,6 +359,7 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
       setGalleryImages(prev => [...prev, result.data!.url])
       const currentGallery = form.getValues('images') || []
       form.setValue('images', [...currentGallery, result.data!.url])
+      setHasSelectedGallery(true)
       toast.success('Gallery image uploaded successfully!', {
         duration: 3000,
         position: 'bottom-right',
@@ -192,6 +381,7 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
     if (result.data?.url) {
       setClientAvatar(result.data!.url)
       form.setValue('client.image', result.data!.url)
+      setHasSelectedClientAvatar(true)
       toast.success('Client avatar uploaded successfully!', {
         duration: 3000,
         position: 'bottom-right',
@@ -223,29 +413,67 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
     }, 300) // Match the animation duration
   }
 
+  const handleMediaPickerOpen = (type: 'image' | 'video' | 'audio' | 'all', target: 'featured' | 'gallery' | 'client') => {
+    setMediaPickerType(type)
+    setMediaPickerTarget(target)
+    setShowMediaPicker(true)
+  }
+
+  const handleMediaSelect = (media: MediaItem | MediaItem[]) => {
+    const mediaArray = Array.isArray(media) ? media : [media]
+    
+    if (mediaPickerTarget === 'featured') {
+      const selectedMedia = mediaArray[0]
+      setUploadedImages([selectedMedia.url])
+      form.setValue('thumbnail', selectedMedia.url)
+      setHasSelectedThumbnail(true)
+      toast.success(`Selected ${selectedMedia.filename} from media library`)
+    } else if (mediaPickerTarget === 'gallery') {
+      const newUrls = mediaArray.map(m => m.url)
+      setGalleryImages(prev => [...prev, ...newUrls])
+      const currentImages = form.getValues('images') || []
+      form.setValue('images', [...currentImages, ...newUrls])
+      setHasSelectedGallery(true)
+      toast.success(`Selected ${mediaArray.length} image${mediaArray.length > 1 ? 's' : ''} from media library`)
+    } else if (mediaPickerTarget === 'client') {
+      const selectedMedia = mediaArray[0]
+      setClientAvatar(selectedMedia.url)
+      const currentClient = form.getValues('client') || { name: '', designation: '', testimonial: '', image: '' }
+      form.setValue('client', { ...currentClient, image: selectedMedia.url })
+      setHasSelectedClientAvatar(true)
+      toast.success(`Selected ${selectedMedia.filename} from media library`)
+    }
+    setShowMediaPicker(false)
+  }
+
   const onSubmit = async (data: FormData) => {
+    console.log('🚀 Form submission started with data:', data)
+    console.log('📊 Form validation state:', form.formState)
+    console.log('❌ Form errors:', form.formState.errors)
+    
     setIsLoading(true)
     try {
       
-      // Transform data to match MongoDB structure with Cloudinary URLs
+      // Transform data to match deployed backend validation schema
       const portfolioData = {
         title: data.title,
-        slug: data.slug || data.title.toLowerCase().replace(/\s+/g, '-'),
+        slug: data.slug || data.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
         description: data.description,
-        categories: data.categories,
+        category: data.categories, // Backend validation expects 'category'
         technologies: data.technologies,
         features: data.features,
-        liveUrl: data.liveUrl || '',
+        live_url: data.liveUrl || '', // Backend validation expects 'live_url'
         // Cloudinary hosted URLs
         thumbnail: data.thumbnail || '', // Cloudinary URL for main project image
-        images: data.images || [], // Array of Cloudinary URLs for project gallery
+        gallery: data.images || [], // Backend validation expects 'gallery'
         client: {
           name: data.client?.name || '',
           designation: data.client?.designation || '',
           testimonial: data.client?.testimonial || '',
           image: data.client?.image || '', // Cloudinary URL for client avatar
         },
-        publishDate: data.publishDate || new Date().toISOString(),
+        publishDate: new Date().toISOString(),
+        status: 'published', // Default status for new portfolios
         // Additional metadata for Cloudinary images
         imageMetadata: {
           thumbnail: data.thumbnail ? {
@@ -266,30 +494,18 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
         }
       }
       
-      let url = PORTFOLIO_ENDPOINTS.CREATE
-      let method = 'POST'
-      
       if (isEdit && portfolio && '_id' in portfolio && portfolio._id) {
-        url = PORTFOLIO_ENDPOINTS.UPDATE(portfolio._id)
-        method = 'PUT'
+        await projectsApi.update(portfolio._id, portfolioData)
+      } else {
+        await projectsApi.create(portfolioData)
       }
-
-      const response = await fetch(url, {
-        method: method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(portfolioData),
-      })
-
-      if (!response.ok) {
-        throw new Error(`Failed to ${isEdit ? 'update' : 'create'} portfolio`)
-      }
-
-      const result = await response.json()
-      console.log(`Successfully ${isEdit ? 'updated' : 'created'} portfolio:`, result)
+      
       
       toast.success(`Portfolio ${isEdit ? 'updated' : 'created'} successfully!`)
+      
+      // Clear draft on successful submission
+      localStorage.removeItem('portfolio-draft')
+      setIsDraft(false)
       
       // Success - refresh data and close form
       onSuccess?.()
@@ -308,23 +524,38 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
           isOpening ? 'opacity-0' : isClosing ? 'opacity-0' : 'opacity-100'
         }`}>
       {/* Click outside to close */}
-      <div className="absolute inset-0" onClick={handleClose}></div>
+      <div className="absolute inset-0" onClick={clickOutsideEnabled ? handleClose : undefined}></div>
       
       {/* Sidebar */}
-      <div className={`fixed right-0 top-0 h-full w-full max-w-3xl bg-white dark:bg-gray-900 shadow-xl transform transition-all duration-300 ease-in-out ${
-        isOpening 
-          ? 'translate-x-full opacity-0' 
-          : isClosing 
+      <div 
+        className={`fixed right-0 top-0 h-full w-full max-w-3xl bg-white dark:bg-gray-900 shadow-xl transform transition-all duration-300 ease-in-out ${
+          isOpening 
             ? 'translate-x-full opacity-0' 
-            : 'translate-x-0 opacity-100'
-      }`}>
+            : isClosing 
+              ? 'translate-x-full opacity-0' 
+              : 'translate-x-0 opacity-100'
+        }`}
+        onClick={(e) => e.stopPropagation()}
+      >
         <Card className="h-full flex flex-col">
           <CardHeader className="border-b">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-xl">{isEdit ? 'Edit Portfolio' : 'Add New Portfolio'}</CardTitle>
+                <CardTitle className="text-xl flex items-center gap-2">
+                  {isEdit ? 'Edit Portfolio' : 'Add New Portfolio'}
+                  {isDraft && (
+                    <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800">
+                      Draft
+                    </Badge>
+                  )}
+                </CardTitle>
                 <CardDescription>
                   {isEdit ? 'Update your portfolio project details' : 'Fill in the details to create a new portfolio project'}
+                  {isDraft && (
+                    <span className="block text-xs text-blue-600 dark:text-blue-400 mt-1">
+                      Auto-saved as draft
+                    </span>
+                  )}
                 </CardDescription>
               </div>
               <Button variant="outline" size="icon" onClick={handleClose}>
@@ -344,9 +575,38 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
                     <FormItem>
                       <FormLabel>Project Title *</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., Lakeside Lodges – Luxury Holiday Lodge Development" {...field} />
+                        <Input 
+                          placeholder="e.g., Lakeside Lodges – Luxury Holiday Lodge Development" 
+                          {...field}
+                          onChange={(e) => {
+                            field.onChange(e)
+                            // Auto-generate slug from title
+                            const slug = e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+                            form.setValue('slug', slug)
+                          }}
+                        />
                       </FormControl>
                       <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="slug"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>URL Slug</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="e.g., lakeside-lodges-luxury-holiday-lodge-development" 
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                      <p className="text-xs text-gray-600 dark:text-gray-400">
+                        This will be used in the project URL. Auto-generated from title.
+                      </p>
                     </FormItem>
                   )}
                 />
@@ -444,21 +704,35 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
               {/* Image Upload Section */}
               <div className="space-y-4">
                 <div>
-                  <Label className="text-sm font-medium">Project Thumbnail</Label>
+                  <div className="flex items-center justify-between mb-3">
+                    <Label className="text-sm font-medium">Project Thumbnail</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleMediaPickerOpen('image', 'featured')}
+                      className="flex items-center gap-2"
+                    >
+                      <ImageIcon className="w-4 h-4" />
+                      Use from Media
+                    </Button>
+                  </div>
                   <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
                     Upload a main screenshot or thumbnail for this project
                   </p>
-                  <ImageUpload
-                    onUploadSuccess={handleImageUpload}
-                    onUploadError={(error) => toast.error(error)}
-                    maxFiles={1}
-                    allowMultiple={false}
-                    maxSize={4 * 1024 * 1024} // 4MB
-                    className="mb-4"
-                    title="Upload Project Thumbnail"
-                    description="Drag and drop your thumbnail here, or click to browse"
-                    supportText="Supports: JPG, PNG, WebP (max 4MB) for thumbnail"
-                  />
+                  {!hasSelectedThumbnail && (
+                    <ImageUpload
+                      onUploadSuccess={handleImageUpload}
+                      onUploadError={(error) => toast.error(error)}
+                      maxFiles={1}
+                      allowMultiple={false}
+                      maxSize={4 * 1024 * 1024} // 4MB
+                      className="mb-4"
+                      title="Upload Project Thumbnail"
+                      description="Drag and drop your thumbnail here, or click to browse"
+                      supportText="Supports: JPG, PNG, WebP (max 4MB) for thumbnail"
+                    />
+                  )}
                   {uploadedImages.length > 0 && (
                     <div className="mt-3">
                       <p className="text-sm font-medium text-gray-900 dark:text-white mb-2">Uploaded Thumbnail:</p>
@@ -492,20 +766,34 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
                 </div>
 
                 <div>
-                  <Label className="text-sm font-medium">Project Gallery</Label>
+                  <div className="flex items-center justify-between mb-3">
+                    <Label className="text-sm font-medium">Project Gallery</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleMediaPickerOpen('image', 'gallery')}
+                      className="flex items-center gap-2"
+                    >
+                      <ImageIcon className="w-4 h-4" />
+                      Use from Media
+                    </Button>
+                  </div>
                   <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
                     Upload multiple screenshots to showcase your project (up to 10 images)
                   </p>
-                  <ImageUpload
-                    onUploadSuccess={handleGalleryUpload}
-                    onUploadError={(error) => toast.error(error)}
-                    maxFiles={10}
-                    allowMultiple={true}
-                    className="mb-4"
-                    title="Upload Project Gallery Images"
-                    description="Drag and drop your project gallery image here, or click to browse"
-                    supportText="Supports: JPG, PNG, GIF, WebP (max 32MB) for gallery"
-                  />
+                  {!hasSelectedGallery && (
+                    <ImageUpload
+                      onUploadSuccess={handleGalleryUpload}
+                      onUploadError={(error) => toast.error(error)}
+                      maxFiles={10}
+                      allowMultiple={true}
+                      className="mb-4"
+                      title="Upload Project Gallery Images"
+                      description="Drag and drop your project gallery image here, or click to browse"
+                      supportText="Supports: JPG, PNG, GIF, WebP (max 32MB) for gallery"
+                    />
+                  )}
                   {galleryImages.length > 0 && (
                     <div className="mt-3">
                       <div className="flex items-center justify-between mb-2">
@@ -576,7 +864,7 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
               </div>
 
               {/* Project URLs */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <FormField
                   control={form.control}
                   name="liveUrl"
@@ -585,23 +873,6 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
                       <FormLabel>Live URL</FormLabel>
                       <FormControl>
                         <Input placeholder="https://example.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="publishDate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Publish Date</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="datetime-local" 
-                          placeholder="Select publish date" 
-                          {...field} 
-                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -715,21 +986,35 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
 
                 {/* Client Avatar Upload */}
                 <div>
-                  <Label className="text-sm font-medium">Client Avatar</Label>
+                  <div className="flex items-center justify-between mb-3">
+                    <Label className="text-sm font-medium">Client Avatar</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleMediaPickerOpen('image', 'client')}
+                      className="flex items-center gap-2"
+                    >
+                      <ImageIcon className="w-4 h-4" />
+                      Use from Media
+                    </Button>
+                  </div>
                   <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
                     Upload a photo of the client for the testimonial
                   </p>
-                  <ImageUpload
-                    onUploadSuccess={handleClientAvatarUpload}
-                    onUploadError={(error) => toast.error(error)}
-                    maxFiles={1}
-                    allowMultiple={false}
-                    maxSize={1024 * 1024} // 1MB
-                    className="mb-4"
-                    title="Upload Client Avatar"
-                    description="Drag and drop Client Avatar here, or click to browse"
-                    supportText="Supports: JPG, PNG (max 1MB) for avatar"
-                  />
+                  {!hasSelectedClientAvatar && (
+                    <ImageUpload
+                      onUploadSuccess={handleClientAvatarUpload}
+                      onUploadError={(error) => toast.error(error)}
+                      maxFiles={1}
+                      allowMultiple={false}
+                      maxSize={1024 * 1024} // 1MB
+                      className="mb-4"
+                      title="Upload Client Avatar"
+                      description="Drag and drop Client Avatar here, or click to browse"
+                      supportText="Supports: JPG, PNG (max 1MB) for avatar"
+                    />
+                  )}
                   {clientAvatar && (
                     <div className="mt-3">
                       <p className="text-sm font-medium text-gray-900 dark:text-white mb-2">Client Avatar:</p>
@@ -766,20 +1051,39 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
 
               {/* Action Buttons */}
               <div className=" bottom-0 pt-4 mt-6">
-                <div className="flex justify-end gap-4">
-                  <Button type="button" variant="outline" onClick={handleClose}>
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={isLoading}>
-                    {isLoading ? (
-                      'Saving...'
-                    ) : (
-                      <>
-                        <Save className="w-4 h-4 mr-2" />
-                        {isEdit ? 'Update Portfolio' : 'Create Portfolio'}
-                      </>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    {isDraft && (
+                      <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
+                        <div className={`w-2 h-2 rounded-full ${isSaving ? 'bg-yellow-500 animate-pulse' : 'bg-blue-500'}`}></div>
+                        {isSaving ? 'Saving draft...' : 'Auto-saved as draft'}
+                      </div>
                     )}
-                  </Button>
+                  </div>
+                  <div className="flex gap-4">
+                    <Button type="button" variant="outline" onClick={handleClose}>
+                      Cancel
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      disabled={isLoading}
+                      onClick={() => {
+                        console.log('🔘 Submit button clicked')
+                        console.log('📝 Form values:', form.getValues())
+                        console.log('✅ Form is valid:', form.formState.isValid)
+                        console.log('❌ Form errors:', form.formState.errors)
+                      }}
+                    >
+                      {isLoading ? (
+                        'Saving...'
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4 mr-2" />
+                          {isEdit ? 'Update Portfolio' : 'Create Portfolio'}
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </form>
@@ -787,6 +1091,18 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
         </CardContent>
         </Card>
       </div>
+
+      {/* Media Picker Modal */}
+      <MediaPicker
+        isOpen={showMediaPicker}
+        onClose={() => setShowMediaPicker(false)}
+        onSelect={handleMediaSelect}
+        mediaType={mediaPickerType}
+        title={`Select ${mediaPickerType === 'all' ? 'Media' : mediaPickerType.charAt(0).toUpperCase() + mediaPickerType.slice(1)}`}
+        description={`Choose a ${mediaPickerType === 'all' ? 'media file' : mediaPickerType} from your Cloudinary library`}
+        allowMultiple={mediaPickerTarget === 'gallery'}
+        maxSelections={mediaPickerTarget === 'gallery' ? 10 : 1}
+      />
     </div>
   )
 }

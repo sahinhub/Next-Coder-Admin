@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import toast from 'react-hot-toast'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -25,7 +26,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { X, Save, Plus } from 'lucide-react'
+import { X, Save, Plus, Image as ImageIcon } from 'lucide-react'
+import { MediaPicker } from '@/components/ui/MediaPicker'
+import { type MediaItem } from '@/lib/cloudinaryApi'
+import { careersApi } from '@/lib/api'
 
 const formSchema = z.object({
   title: z.string().min(1, 'Job title is required'),
@@ -36,9 +40,10 @@ const formSchema = z.object({
   description: z.string().min(20, 'Description must be at least 20 characters'),
   responsibilities: z.array(z.string()).min(1, 'At least one responsibility is required'),
   skills: z.array(z.string()).min(1, 'At least one skill is required'),
+  image: z.string().optional(),
   postedDate: z.string().optional(),
   applicationDeadline: z.string().optional(),
-  status: z.enum(['active', 'paused', 'closed']),
+  status: z.enum(['draft', 'active', 'paused', 'closed']),
 })
 
 type FormData = z.infer<typeof formSchema>
@@ -58,6 +63,8 @@ export function CareerForm({ onClose, job, isEdit = false, onSuccess }: CareerFo
   const [isLoading, setIsLoading] = useState(false)
   const [isClosing, setIsClosing] = useState(false)
   const [isOpening, setIsOpening] = useState(true)
+  const [showMediaPicker, setShowMediaPicker] = useState(false)
+  const [mediaPickerType, setMediaPickerType] = useState<'image' | 'video' | 'audio' | 'all'>('image')
 
   // Handle opening animation
   useEffect(() => {
@@ -74,6 +81,17 @@ export function CareerForm({ onClose, job, isEdit = false, onSuccess }: CareerFo
     }, 300) // Match the animation duration
   }
 
+  const handleMediaPickerOpen = (type: 'image' | 'video' | 'audio' | 'all') => {
+    setMediaPickerType(type)
+    setShowMediaPicker(true)
+  }
+
+  const handleMediaSelect = (media: MediaItem) => {
+    form.setValue('image', media.url)
+    setShowMediaPicker(false)
+    toast.success(`Selected ${media.filename} from media library`)
+  }
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -85,11 +103,90 @@ export function CareerForm({ onClose, job, isEdit = false, onSuccess }: CareerFo
       description: (job as Record<string, unknown>)?.description as string || '',
       responsibilities: (job as Record<string, unknown>)?.responsibilities as string[] || [],
       skills: (job as Record<string, unknown>)?.skills as string[] || [],
+      image: (job as Record<string, unknown>)?.image as string || '',
       postedDate: (job as Record<string, unknown>)?.postedDate as string || new Date().toISOString().split('T')[0],
       applicationDeadline: (job as Record<string, unknown>)?.applicationDeadline as string || '',
       status: (job as Record<string, unknown>)?.status as 'active' | 'paused' | 'closed' || 'active',
     },
   })
+
+  // Auto-save draft functionality
+  useEffect(() => {
+    if (isEdit) return // Don't auto-save when editing existing career
+
+    const subscription = form.watch((data) => {
+      // Debounce auto-save
+      const timeoutId = setTimeout(() => {
+        if (data.title || data.description) {
+          const draftData = {
+            ...data,
+            responsibilities,
+            skills,
+            status: 'draft',
+            lastSaved: new Date().toISOString()
+          }
+          localStorage.setItem('career-draft', JSON.stringify(draftData))
+        }
+      }, 3000) // 3 second debounce
+
+      return () => clearTimeout(timeoutId)
+    })
+
+    // Auto-save every 15 seconds
+    const interval = setInterval(() => {
+      if (!isEdit) {
+        const formData = form.getValues()
+        if (formData.title || formData.description) {
+          const draftData = {
+            ...formData,
+            responsibilities,
+            skills,
+            status: 'draft',
+            lastSaved: new Date().toISOString()
+          }
+          localStorage.setItem('career-draft', JSON.stringify(draftData))
+        }
+      }
+    }, 15000)
+
+    return () => {
+      subscription.unsubscribe()
+      clearInterval(interval)
+    }
+  }, [form, responsibilities, skills, isEdit])
+
+  // Load draft on component mount
+  useEffect(() => {
+    const savedDraft = localStorage.getItem('career-draft')
+    if (savedDraft && !isEdit) {
+      try {
+        const draftData = JSON.parse(savedDraft)
+        console.log('Loading career draft:', draftData)
+        
+        form.reset({
+          title: draftData.title || '',
+          department: draftData.department || '',
+          location: draftData.location || '',
+          experienceRequired: draftData.experienceRequired || '',
+          employmentType: draftData.employmentType || 'Full-time',
+          description: draftData.description || '',
+          responsibilities: draftData.responsibilities || [],
+          skills: draftData.skills || [],
+          image: draftData.image || '',
+          postedDate: draftData.postedDate || new Date().toISOString().split('T')[0],
+          applicationDeadline: draftData.applicationDeadline || '',
+          status: draftData.status || 'active',
+        })
+        
+        // Load state arrays
+        setResponsibilities(draftData.responsibilities || [])
+        setSkills(draftData.skills || [])
+      } catch (error) {
+        console.error('Error loading career draft:', error)
+        localStorage.removeItem('career-draft')
+      }
+    }
+  }, [isEdit, form])
 
   const addItem = (type: 'responsibility' | 'skill') => {
     const newItem = type === 'responsibility' ? newResponsibility : newSkill
@@ -142,31 +239,23 @@ export function CareerForm({ onClose, job, isEdit = false, onSuccess }: CareerFo
         skills: data.skills,
         postedDate: data.postedDate || new Date().toISOString().split('T')[0],
         applicationDeadline: data.applicationDeadline || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        status: data.status,
+        status: data.status as 'draft' | 'active' | 'paused' | 'closed', // Use form status value
       }
 
-      let url = 'https://nextcoderapi.vercel.app/careers'
-      let method = 'POST'
+      let result
       
       if (isEdit && job && '_id' in job && job._id) {
-        url = `https://nextcoderapi.vercel.app/career/update/${job._id}`
-        method = 'PUT'
+        result = await careersApi.update(job._id as string, careerData)
+      } else {
+        result = await careersApi.create(careerData)
       }
-
-      const response = await fetch(url, {
-        method: method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(careerData),
-      })
-
-      if (!response.ok) {
-        throw new Error(`Failed to ${isEdit ? 'update' : 'create'} career`)
-      }
-
-      const result = await response.json()
+      
       console.log(`Successfully ${isEdit ? 'updated' : 'created'} career:`, result)
+      
+      // Clear draft on successful submission
+      if (!isEdit) {
+        localStorage.removeItem('career-draft')
+      }
       
       toast.success(`Job posting ${isEdit ? 'updated' : 'created'} successfully!`)
       
@@ -356,6 +445,51 @@ export function CareerForm({ onClose, job, isEdit = false, onSuccess }: CareerFo
                 )}
               />
 
+              {/* Job Image */}
+              <FormField
+                control={form.control}
+                name="image"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex items-center justify-between mb-3">
+                      <FormLabel>Job Image</FormLabel>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleMediaPickerOpen('image')}
+                        className="flex items-center gap-2"
+                      >
+                        <ImageIcon className="w-4 h-4" />
+                        Use from Media
+                      </Button>
+                    </div>
+                    <FormControl>
+                      <Input 
+                        placeholder="Enter image URL or use media picker"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                    {field.value && (
+                      <div className="mt-3">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white mb-2">Preview:</p>
+                        <div className="relative w-32 h-20 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                          <Image
+                            src={field.value}
+                            alt="Job preview"
+                            fill
+                            className="object-cover"
+                            onError={() => {
+                              // Handle error if needed
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </FormItem>
+                )}
+              />
 
               {/* Responsibilities */}
               <div>
@@ -438,6 +572,16 @@ export function CareerForm({ onClose, job, isEdit = false, onSuccess }: CareerFo
                 />
               </div>
 
+              {/* Draft Status */}
+              {!isEdit && (form.getValues('title') || form.getValues('description')) && (
+                <div className="flex items-center justify-center text-sm text-gray-500 dark:text-gray-400">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                    <span>Saving draft...</span>
+                  </div>
+                </div>
+              )}
+
               {/* Action Buttons */}
               <div className=" pt-4 mt-6">
                 <div className="flex justify-end gap-4">
@@ -461,6 +605,16 @@ export function CareerForm({ onClose, job, isEdit = false, onSuccess }: CareerFo
           </CardContent>
         </Card>
       </div>
+
+      {/* Media Picker Modal */}
+      <MediaPicker
+        isOpen={showMediaPicker}
+        onClose={() => setShowMediaPicker(false)}
+        onSelect={handleMediaSelect as (media: MediaItem | MediaItem[]) => void}
+        mediaType={mediaPickerType}
+        title={`Select ${mediaPickerType === 'all' ? 'Media' : mediaPickerType.charAt(0).toUpperCase() + mediaPickerType.slice(1)}`}
+        description={`Choose a ${mediaPickerType === 'all' ? 'media file' : mediaPickerType} from your Cloudinary library`}
+      />
     </div>
   )
 }

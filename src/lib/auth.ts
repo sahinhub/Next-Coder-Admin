@@ -11,8 +11,8 @@ export const getAdminUser = (): AdminUser | null => {
   if (typeof window === 'undefined') return null
   
   try {
-    const user = localStorage.getItem('admin_user')
-    const token = localStorage.getItem('admin_token')
+    const user = localStorage.getItem('admin-user')
+    const token = localStorage.getItem('admin-token')
     
     if (!user || !token) return null
     
@@ -25,8 +25,8 @@ export const getAdminUser = (): AdminUser | null => {
 export const isAuthenticated = (): boolean => {
   if (typeof window === 'undefined') return false
   
-  const token = localStorage.getItem('admin_token')
-  const user = localStorage.getItem('admin_user')
+  const token = localStorage.getItem('admin-token')
+  const user = localStorage.getItem('admin-user')
   
   return !!(token && user)
 }
@@ -34,8 +34,8 @@ export const isAuthenticated = (): boolean => {
 export const logout = (): void => {
   if (typeof window === 'undefined') return
   
-  localStorage.removeItem('admin_token')
-  localStorage.removeItem('admin_user')
+  localStorage.removeItem('admin-token')
+  localStorage.removeItem('admin-user')
   window.location.href = '/login'
 }
 

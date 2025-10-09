@@ -66,7 +66,7 @@ export function Analytics({
     ? (testimonials.reduce((sum, t) => sum + t.rating, 0) / testimonials.length).toFixed(1)
     : '0.0'
   
-  const featuredTestimonials = testimonials.filter(t => t.featured).length
+  // Removed featured testimonials count as featured field was removed
   const activeCareers = careers.filter(c => c.status === 'active').length
 
 
@@ -314,10 +314,6 @@ export function Analytics({
                 <Star className="h-4 w-4 text-yellow-400 fill-current" />
                 <span className="text-sm font-medium">{averageRating}</span>
               </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600 dark:text-gray-400">Featured Testimonials</span>
-              <span className="text-sm font-medium">{featuredTestimonials}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600 dark:text-gray-400">Active Jobs</span>

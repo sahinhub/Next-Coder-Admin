@@ -12,7 +12,9 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { ImageUpload } from '@/components/ui/ImageUpload'
+import { MediaPicker } from '@/components/ui/MediaPicker'
 import { type ImageUploadResponse } from '@/lib/imageUpload'
+import { type MediaItem } from '@/lib/cloudinaryApi'
 import {
   Form,
   FormControl,
@@ -21,16 +23,14 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import { Switch } from '@/components/ui/switch'
-import { X, Save, Star, Calendar, Info, ChevronLeft, ChevronRight } from 'lucide-react'
-import { useAuth } from '@/hooks/useAuth'
+import { X, Save, Star, Calendar, Info, Image as ImageIcon } from 'lucide-react'
+import { testimonialsApi } from '@/lib/api'
 
 const formSchema = z.object({
   name: z.string().min(1, 'Client name is required'),
   rating: z.number().min(1).max(5),
   review: z.string().min(10, 'Review must be at least 10 characters'),
   clientImage: z.string().optional(),
-  featured: z.boolean(),
   date: z.string().optional(),
 })
 
@@ -47,10 +47,9 @@ export function TestimonialForm({ onClose, testimonial, isEdit = false, onSucces
   const [isLoading, setIsLoading] = useState(false)
   const [isClosing, setIsClosing] = useState(false)
   const [isOpening, setIsOpening] = useState(true)
-  const [showCalendar, setShowCalendar] = useState(false)
-  const [currentMonth, setCurrentMonth] = useState(new Date())
   const [clientImage, setClientImage] = useState<string>('')
-  const { token } = useAuth()
+  const [showMediaPicker, setShowMediaPicker] = useState(false)
+  const [mediaPickerType, setMediaPickerType] = useState<'image' | 'video' | 'audio' | 'all'>('image')
 
   // Handle opening animation
   useEffect(() => {
@@ -60,28 +59,27 @@ export function TestimonialForm({ onClose, testimonial, isEdit = false, onSucces
     return () => clearTimeout(timer)
   }, [])
 
-  // Close calendar when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (showCalendar) {
-        const target = event.target as Element
-        if (!target.closest('.calendar-container')) {
-          setShowCalendar(false)
-        }
-      }
-    }
-
-    if (showCalendar) {
-      document.addEventListener('mousedown', handleClickOutside)
-      return () => document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [showCalendar])
 
   const handleClose = () => {
     setIsClosing(true)
     setTimeout(() => {
       onClose()
     }, 300) // Match the animation duration
+  }
+
+  const handleMediaPickerOpen = (type: 'image' | 'video' | 'audio' | 'all') => {
+    setMediaPickerType(type)
+    setShowMediaPicker(true)
+  }
+
+  const handleMediaSelect = (media: MediaItem | MediaItem[]) => {
+    const mediaArray = Array.isArray(media) ? media : [media]
+    const selectedMedia = mediaArray[0]
+    
+    setClientImage(selectedMedia.url)
+    form.setValue('clientImage', selectedMedia.url)
+    setShowMediaPicker(false)
+    toast.success(`Selected ${selectedMedia.filename} from media library`)
   }
 
   const form = useForm<FormData>({
@@ -91,10 +89,78 @@ export function TestimonialForm({ onClose, testimonial, isEdit = false, onSucces
       rating: (testimonial as Record<string, unknown>)?.rating as number || 5,
       review: (testimonial as Record<string, unknown>)?.review as string || '',
       clientImage: (testimonial as Record<string, unknown>)?.clientImage as string || '',
-      featured: (testimonial as Record<string, unknown>)?.featured as boolean || false,
       date: (testimonial as Record<string, unknown>)?.date as string || new Date().toISOString().split('T')[0],
     },
   })
+
+  // Auto-save draft functionality
+  useEffect(() => {
+    if (isEdit) return // Don't auto-save when editing existing testimonial
+
+    const subscription = form.watch((data) => {
+      // Debounce auto-save
+      const timeoutId = setTimeout(() => {
+        if (data.name || data.review) {
+          const draftData = {
+            ...data,
+            clientImage,
+            status: 'draft',
+            lastSaved: new Date().toISOString()
+          }
+          localStorage.setItem('testimonial-draft', JSON.stringify(draftData))
+        }
+      }, 3000) // 3 second debounce
+
+      return () => clearTimeout(timeoutId)
+    })
+
+    // Auto-save every 15 seconds
+    const interval = setInterval(() => {
+      if (!isEdit) {
+        const formData = form.getValues()
+        if (formData.name || formData.review) {
+          const draftData = {
+            ...formData,
+            clientImage,
+            status: 'draft',
+            lastSaved: new Date().toISOString()
+          }
+          localStorage.setItem('testimonial-draft', JSON.stringify(draftData))
+        }
+      }
+    }, 15000)
+
+    return () => {
+      subscription.unsubscribe()
+      clearInterval(interval)
+    }
+  }, [form, clientImage, isEdit])
+
+  // Load draft on component mount
+  useEffect(() => {
+    const savedDraft = localStorage.getItem('testimonial-draft')
+    if (savedDraft && !isEdit) {
+      try {
+        const draftData = JSON.parse(savedDraft)
+        console.log('Loading testimonial draft:', draftData)
+        
+        form.reset({
+          name: draftData.name || '',
+          rating: draftData.rating || 5,
+          review: draftData.review || '',
+          clientImage: draftData.clientImage || '',
+          date: draftData.date || new Date().toISOString().split('T')[0],
+        })
+        
+        if (draftData.clientImage) {
+          setClientImage(draftData.clientImage)
+        }
+      } catch (error) {
+        console.error('Error loading testimonial draft:', error)
+        localStorage.removeItem('testimonial-draft')
+      }
+    }
+  }, [isEdit, form])
 
   useEffect(() => {
     if (isEdit && testimonial) {
@@ -103,7 +169,6 @@ export function TestimonialForm({ onClose, testimonial, isEdit = false, onSucces
         rating: (testimonial as Record<string, unknown>)?.rating as number || 5,
         review: (testimonial as Record<string, unknown>)?.review as string || '',
         clientImage: (testimonial as Record<string, unknown>)?.clientImage as string || '',
-        featured: (testimonial as Record<string, unknown>)?.featured as boolean || false,
         date: (testimonial as Record<string, unknown>)?.date as string || new Date().toISOString().split('T')[0],
       })
       setClientImage((testimonial as Record<string, unknown>)?.clientImage as string || '')
@@ -115,27 +180,30 @@ export function TestimonialForm({ onClose, testimonial, isEdit = false, onSucces
     try {
       console.log('Testimonial form submitted:', data)
 
-      const url = isEdit
-        ? `https://nextcoderapi.vercel.app/testimonial/update/${(testimonial as Record<string, unknown>)?._id}`
-        : 'https://nextcoderapi.vercel.app/testimonials'
-      const method = isEdit ? 'PUT' : 'POST'
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(data),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || `Failed to ${isEdit ? 'update' : 'create'} testimonial`)
+      // Add status field and ensure all required fields are present
+      const testimonialData = {
+        ...data,
+        clientImage: clientImage || '',
+        status: 'published' as const,
+        // Add optional fields that backend might expect
+        platform: 'Direct', // Default platform since we removed the field
+        featured: false, // Default featured status since we removed the field
       }
 
-      const result = await response.json()
+      let result
+      
+      if (isEdit && testimonial && '_id' in testimonial && testimonial._id) {
+        result = await testimonialsApi.update(testimonial._id as string, testimonialData)
+      } else {
+        result = await testimonialsApi.create(testimonialData)
+      }
+      
       console.log(`Successfully ${isEdit ? 'updated' : 'created'} testimonial:`, result)
+
+      // Clear draft on successful submission
+      if (!isEdit) {
+        localStorage.removeItem('testimonial-draft')
+      }
 
       toast.success(`Testimonial ${isEdit ? 'updated' : 'created'} successfully!`)
 
@@ -173,58 +241,6 @@ export function TestimonialForm({ onClose, testimonial, isEdit = false, onSucces
     ))
   }
 
-  // Calendar helper functions
-  const getDaysInMonth = (date: Date) => {
-    const year = date.getFullYear()
-    const month = date.getMonth()
-    const firstDay = new Date(year, month, 1)
-    const lastDay = new Date(year, month + 1, 0)
-    const daysInMonth = lastDay.getDate()
-    const startingDayOfWeek = firstDay.getDay()
-    
-    const days = []
-    
-    // Add empty cells for days before the first day of the month
-    for (let i = 0; i < startingDayOfWeek; i++) {
-      days.push(null)
-    }
-    
-    // Add days of the month
-    for (let day = 1; day <= daysInMonth; day++) {
-      days.push(new Date(year, month, day))
-    }
-    
-    return days
-  }
-
-  const formatDate = (date: Date) => {
-    return date.toISOString().split('T')[0]
-  }
-
-  const isToday = (date: Date) => {
-    const today = new Date()
-    return date.toDateString() === today.toDateString()
-  }
-
-  const isSelected = (date: Date) => {
-    const selectedDate = form.getValues('date')
-    return selectedDate === formatDate(date)
-  }
-
-  const handleDateSelect = (date: Date) => {
-    form.setValue('date', formatDate(date))
-    setShowCalendar(false)
-  }
-
-  const navigateMonth = (direction: 'prev' | 'next') => {
-    const newMonth = new Date(currentMonth)
-    if (direction === 'prev') {
-      newMonth.setMonth(newMonth.getMonth() - 1)
-    } else {
-      newMonth.setMonth(newMonth.getMonth() + 1)
-    }
-    setCurrentMonth(newMonth)
-  }
 
   const handleClientImageUpload = (result: ImageUploadResponse) => {
     if (result.data?.url) {
@@ -294,6 +310,7 @@ export function TestimonialForm({ onClose, testimonial, isEdit = false, onSucces
                     </FormItem>
                   )}
                 />
+                
               </div>
 
               {/* Review */}
@@ -318,7 +335,19 @@ export function TestimonialForm({ onClose, testimonial, isEdit = false, onSucces
               {/* Client Image Upload */}
               <div className="space-y-4">
                 <div>
-                  <Label className="text-sm font-medium">Client Image</Label>
+                  <div className="flex items-center justify-between mb-3">
+                    <Label className="text-sm font-medium">Client Image</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleMediaPickerOpen('image')}
+                      className="flex items-center gap-2"
+                    >
+                      <ImageIcon className="w-4 h-4" />
+                      Use from Media
+                    </Button>
+                  </div>
                   <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
                     Upload a photo of the client for the testimonial
                   </p>
@@ -367,68 +396,46 @@ export function TestimonialForm({ onClose, testimonial, isEdit = false, onSucces
                 </div>
               </div>
 
-              {/* Rating and Featured */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="rating"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Rating *</FormLabel>
-                      <div className="space-y-3">
-                        <div className="flex items-center space-x-4">
-                          <div className="flex space-x-2 p-2 rounded-lg">
-                            {renderStars(field.value, true)}
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <div className="bg-yellow-100 dark:bg-yellow-900/30 px-3 py-1 rounded-full">
-                              <span className="text-lg font-bold text-yellow-600 dark:text-yellow-400">
-                                {field.value}
-                              </span>
-                            </div>
-                            <span className="text-sm text-muted-foreground">
-                              out of 5
+              {/* Rating */}
+              <FormField
+                control={form.control}
+                name="rating"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Rating *</FormLabel>
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-4">
+                        <div className="flex space-x-2 p-2 rounded-lg">
+                          {renderStars(field.value, true)}
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <div className="bg-yellow-100 dark:bg-yellow-900/30 px-3 py-1 rounded-full">
+                            <span className="text-lg font-bold text-yellow-600 dark:text-yellow-400">
+                              {field.value}
                             </span>
                           </div>
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          Click on a star to set the rating
-                        </div>
-                        <div className="flex justify-between text-xs text-muted-foreground mt-2">
-                          <span>Poor</span>
-                          <span>Fair</span>
-                          <span>Good</span>
-                          <span>Very Good</span>
-                          <span>Excellent</span>
+                          <span className="text-sm text-muted-foreground">
+                            out of 5
+                          </span>
                         </div>
                       </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="featured"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <FormLabel>Featured Testimonial</FormLabel>
-                        <p className="text-sm text-muted-foreground">
-                          Show prominently on homepage
-                        </p>
+                      <div className="text-xs text-muted-foreground">
+                        Click on a star to set the rating
                       </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              </div>
+                      <div className="flex justify-between text-xs text-muted-foreground mt-2">
+                        <span>Poor</span>
+                        <span>Fair</span>
+                        <span>Good</span>
+                        <span>Very Good</span>
+                        <span>Excellent</span>
+                      </div>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-              {/* Date */}
+              {/* Date - Auto-filled */}
               <FormField
                 control={form.control}
                 name="date"
@@ -437,7 +444,7 @@ export function TestimonialForm({ onClose, testimonial, isEdit = false, onSucces
                     <FormLabel>Testimonial Date</FormLabel>
                     <div className="space-y-2">
                       <FormControl>
-                        <div className="relative calendar-container">
+                        <div className="relative">
                           <Input 
                             type="text"
                             value={field.value ? new Date(field.value).toLocaleDateString('en-US', { 
@@ -446,9 +453,8 @@ export function TestimonialForm({ onClose, testimonial, isEdit = false, onSucces
                               day: 'numeric' 
                             }) : ''}
                             readOnly
-                            onClick={() => setShowCalendar(!showCalendar)}
-                            className="pl-10 pr-4 py-3 text-sm border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors cursor-pointer"
-                            placeholder="Select a date"
+                            className="pl-10 pr-4 py-3 text-sm border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800"
+                            placeholder="Date will be set automatically"
                           />
                           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <Calendar className="h-5 w-5 text-gray-400" />
@@ -456,124 +462,25 @@ export function TestimonialForm({ onClose, testimonial, isEdit = false, onSucces
                         </div>
                       </FormControl>
                       
-                      {/* Custom Calendar */}
-                      {showCalendar && (
-                        <div className="calendar-container absolute z-50 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-4 w-80">
-                          <div className="flex items-center justify-between mb-4">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => navigateMonth('prev')}
-                              className="h-8 w-8 p-0"
-                            >
-                              <ChevronLeft className="h-4 w-4" />
-                            </Button>
-                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                              {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                            </h3>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => navigateMonth('next')}
-                              className="h-8 w-8 p-0"
-                            >
-                              <ChevronRight className="h-4 w-4" />
-                            </Button>
-                          </div>
-                          
-                          {/* Calendar Grid */}
-                          <div className="grid grid-cols-7 gap-1 mb-2">
-                            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                              <div key={day} className="text-xs font-medium text-gray-500 dark:text-gray-400 text-center py-2">
-                                {day}
-                              </div>
-                            ))}
-                          </div>
-                          
-                          <div className="grid grid-cols-7 gap-1">
-                            {getDaysInMonth(currentMonth).map((day, index) => (
-                              <div key={index} className="aspect-square">
-                                {day ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDateSelect(day)}
-                                    className={`w-full h-full text-sm rounded-md transition-colors ${
-                                      isSelected(day)
-                                        ? 'bg-purple-600 text-white'
-                                        : isToday(day)
-                                        ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300'
-                                        : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-white'
-                                    }`}
-                                  >
-                                    {day.getDate()}
-                                  </button>
-                                ) : (
-                                  <div className="w-full h-full" />
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                          
-                          {/* Quick Actions */}
-                          <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
-                            <div className="flex flex-wrap gap-1">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  const today = new Date()
-                                  form.setValue('date', formatDate(today))
-                                  setShowCalendar(false)
-                                }}
-                                className="text-xs h-6 px-2"
-                              >
-                                Today
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  const yesterday = new Date()
-                                  yesterday.setDate(yesterday.getDate() - 1)
-                                  form.setValue('date', formatDate(yesterday))
-                                  setShowCalendar(false)
-                                }}
-                                className="text-xs h-6 px-2"
-                              >
-                                Yesterday
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  const lastWeek = new Date()
-                                  lastWeek.setDate(lastWeek.getDate() - 7)
-                                  form.setValue('date', formatDate(lastWeek))
-                                  setShowCalendar(false)
-                                }}
-                                className="text-xs h-6 px-2"
-                              >
-                                Last Week
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      
                       <div className="flex items-center space-x-2 text-xs text-muted-foreground">
                         <Info className="h-4 w-4" />
-                        <span>When was this testimonial received?</span>
+                        <span>Date is automatically set to today when creating a new testimonial</span>
                       </div>
                     </div>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
+              {/* Draft Status */}
+              {!isEdit && (form.getValues('name') || form.getValues('review')) && (
+                <div className="flex items-center justify-center text-sm text-gray-500 dark:text-gray-400">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                    <span>Saving draft...</span>
+                  </div>
+                </div>
+              )}
 
               {/* Action Buttons */}
               <div className=" pt-4 mt-6">
@@ -598,6 +505,16 @@ export function TestimonialForm({ onClose, testimonial, isEdit = false, onSucces
           </CardContent>
         </Card>
       </div>
+
+      {/* Media Picker Modal */}
+      <MediaPicker
+        isOpen={showMediaPicker}
+        onClose={() => setShowMediaPicker(false)}
+        onSelect={handleMediaSelect as (media: MediaItem | MediaItem[]) => void}
+        mediaType={mediaPickerType}
+        title={`Select ${mediaPickerType === 'all' ? 'Media' : mediaPickerType.charAt(0).toUpperCase() + mediaPickerType.slice(1)}`}
+        description={`Choose a ${mediaPickerType === 'all' ? 'media file' : mediaPickerType} from your Cloudinary library`}
+      />
     </div>
   )
 }

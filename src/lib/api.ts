@@ -23,7 +23,13 @@ export const projectsApi = {
     if (params?.sortBy) searchParams.append('sortBy', params.sortBy);
     if (params?.sortOrder) searchParams.append('sortOrder', params.sortOrder);
 
-    const response = await fetch(`${API_BASE_URL}/portfolios?${searchParams.toString()}`)
+    const token = localStorage.getItem('admin-token')
+    const response = await fetch(`${API_BASE_URL}/portfolios?${searchParams.toString()}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      }
+    })
 
     if (!response.ok) {
       throw new Error(`Failed to fetch projects: ${response.statusText}`)
@@ -56,32 +62,68 @@ export const projectsApi = {
 
   // Create new project
   async create(data: Record<string, unknown>) {
+    const token = localStorage.getItem('admin-token')
+    
+    console.log('🚀 Creating project with data:', data)
+    console.log('🔑 Using token:', token ? 'Present' : 'Missing')
+    
     const response = await fetch(`${API_BASE_URL}/newPortfolio`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      },
+      body: JSON.stringify(data),
+    })
+
+    console.log('📡 API Response status:', response.status)
+    console.log('📡 API Response headers:', Object.fromEntries(response.headers.entries()))
+
+    if (!response.ok) {
+      let errorMessage = `Failed to create project: ${response.statusText}`
+      try {
+        const errorData = await response.json()
+        console.error('❌ API Error response:', errorData)
+        errorMessage = errorData.error || errorData.message || errorMessage
+      } catch (parseError) {
+        console.error('❌ Could not parse error response:', parseError)
+      }
+      throw new Error(errorMessage)
+    }
+
+    const result = await response.json()
+    console.log('✅ Project created successfully:', result)
+    return result
+  },
+
+  // Update project
+  async update(id: string, data: Record<string, unknown>) {
+    const token = localStorage.getItem('admin-token')
+    const response = await fetch(`${API_BASE_URL}/portfolio/update/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
       },
       body: JSON.stringify(data),
     })
 
     if (!response.ok) {
-      throw new Error(`Failed to create project: ${response.statusText}`)
+      throw new Error(`Failed to update project: ${response.statusText}`)
     }
 
     return response.json()
   },
 
-  // Update project (Note: API doesn't support updates, only create/delete)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async update(id: string, data: Record<string, unknown>) {
-    // For now, we'll throw an error since the API doesn't support updates
-    throw new Error('Update functionality not implemented in API')
-  },
-
   // Delete project
   async delete(id: string) {
+    const token = localStorage.getItem('admin-token')
     const response = await fetch(`${API_BASE_URL}/portfolio/delete/${id}`, {
       method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      },
     })
 
     if (!response.ok) {
@@ -111,7 +153,13 @@ export const testimonialsApi = {
     if (params?.sortBy) searchParams.append('sortBy', params.sortBy);
     if (params?.sortOrder) searchParams.append('sortOrder', params.sortOrder);
 
-    const response = await fetch(`${API_BASE_URL}/testimonials?${searchParams.toString()}`)
+    const token = localStorage.getItem('admin-token')
+    const response = await fetch(`${API_BASE_URL}/testimonials?${searchParams.toString()}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      }
+    })
 
     if (!response.ok) {
       throw new Error(`Failed to fetch testimonials: ${response.statusText}`)
@@ -126,29 +174,112 @@ export const testimonialsApi = {
     throw new Error('Get testimonial by ID not implemented in API')
   },
 
-  // Create new testimonial (Note: API doesn't support creating testimonials)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // Create new testimonial
   async create(data: Record<string, unknown>) {
-    throw new Error('Create testimonial not implemented in API')
+    const token = localStorage.getItem('admin-token')
+    
+    console.log('🚀 Creating testimonial with data:', data)
+    console.log('🔑 Using token:', token ? 'Present' : 'Missing')
+    
+    const response = await fetch(`${API_BASE_URL}/testimonials`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      },
+      body: JSON.stringify(data),
+    })
+
+    console.log('📡 API Response status:', response.status)
+    console.log('📡 API Response headers:', Object.fromEntries(response.headers.entries()))
+
+    if (!response.ok) {
+      let errorMessage = `Failed to create testimonial: ${response.statusText}`
+      try {
+        const errorData = await response.json()
+        console.error('❌ API Error response:', errorData)
+        errorMessage = errorData.error || errorData.message || errorMessage
+      } catch (parseError) {
+        console.error('❌ Could not parse error response:', parseError)
+      }
+      throw new Error(errorMessage)
+    }
+
+    const result = await response.json()
+    console.log('✅ Testimonial created successfully:', result)
+    return result
   },
 
-  // Update testimonial (Note: API doesn't support updating testimonials)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // Update testimonial
   async update(id: string, data: Record<string, unknown>) {
-    throw new Error('Update testimonial not implemented in API')
+    const token = localStorage.getItem('admin-token')
+    
+    console.log('🚀 Updating testimonial with ID:', id)
+    console.log('📝 Update data:', data)
+    console.log('🔑 Using token:', token ? 'Present' : 'Missing')
+    
+    const response = await fetch(`${API_BASE_URL}/testimonial/update/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      },
+      body: JSON.stringify(data),
+    })
+
+    console.log('📡 API Response status:', response.status)
+    console.log('📡 API Response headers:', Object.fromEntries(response.headers.entries()))
+
+    if (!response.ok) {
+      let errorMessage = `Failed to update testimonial: ${response.statusText}`
+      try {
+        const errorData = await response.json()
+        console.error('❌ API Error response:', errorData)
+        errorMessage = errorData.error || errorData.message || errorMessage
+      } catch (parseError) {
+        console.error('❌ Could not parse error response:', parseError)
+      }
+      throw new Error(errorMessage)
+    }
+
+    const result = await response.json()
+    console.log('✅ Testimonial updated successfully:', result)
+    return result
   },
 
   // Delete testimonial
   async delete(id: string) {
+    const token = localStorage.getItem('admin-token')
+    
+    console.log('🚀 Deleting testimonial with ID:', id)
+    console.log('🔑 Using token:', token ? 'Present' : 'Missing')
+    
     const response = await fetch(`${API_BASE_URL}/delete/testimonial/${id}`, {
       method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      },
     })
 
+    console.log('📡 API Response status:', response.status)
+    console.log('📡 API Response headers:', Object.fromEntries(response.headers.entries()))
+
     if (!response.ok) {
-      throw new Error(`Failed to delete testimonial: ${response.statusText}`)
+      let errorMessage = `Failed to delete testimonial: ${response.statusText}`
+      try {
+        const errorData = await response.json()
+        console.error('❌ API Error response:', errorData)
+        errorMessage = errorData.error || errorData.message || errorMessage
+      } catch (parseError) {
+        console.error('❌ Could not parse error response:', parseError)
+      }
+      throw new Error(errorMessage)
     }
 
-    return response.json()
+    const result = await response.json()
+    console.log('✅ Testimonial deleted successfully:', result)
+    return result
   }
 }
 
@@ -179,7 +310,13 @@ export const careersApi = {
     if (params?.sortBy) searchParams.append('sortBy', params.sortBy);
     if (params?.sortOrder) searchParams.append('sortOrder', params.sortOrder);
 
-    const response = await fetch(`${API_BASE_URL}/careers?${searchParams.toString()}`)
+    const token = localStorage.getItem('admin-token')
+    const response = await fetch(`${API_BASE_URL}/careers?${searchParams.toString()}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      }
+    })
 
     if (!response.ok) {
       throw new Error(`Failed to fetch careers: ${response.statusText}`)
@@ -201,38 +338,110 @@ export const careersApi = {
 
   // Create new career
   async create(data: Record<string, unknown>) {
+    const token = localStorage.getItem('admin-token')
+    
+    console.log('🚀 Creating career with data:', data)
+    console.log('🔑 Using token:', token ? 'Present' : 'Missing')
+    
     const response = await fetch(`${API_BASE_URL}/careers`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
       },
       body: JSON.stringify(data),
     })
 
+    console.log('📡 API Response status:', response.status)
+    console.log('📡 API Response headers:', Object.fromEntries(response.headers.entries()))
+
     if (!response.ok) {
-      throw new Error(`Failed to create career: ${response.statusText}`)
+      let errorMessage = `Failed to create career: ${response.statusText}`
+      try {
+        const errorData = await response.json()
+        console.error('❌ API Error response:', errorData)
+        errorMessage = errorData.error || errorData.message || errorMessage
+      } catch (parseError) {
+        console.error('❌ Could not parse error response:', parseError)
+      }
+      throw new Error(errorMessage)
     }
 
-    return response.json()
+    const result = await response.json()
+    console.log('✅ Career created successfully:', result)
+    return result
   },
 
-  // Update career (Note: API doesn't support updating careers)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // Update career
   async update(id: string, data: Record<string, unknown>) {
-    throw new Error('Update career not implemented in API')
+    const token = localStorage.getItem('admin-token')
+    
+    console.log('🚀 Updating career with ID:', id)
+    console.log('📝 Update data:', data)
+    console.log('🔑 Using token:', token ? 'Present' : 'Missing')
+    
+    const response = await fetch(`${API_BASE_URL}/career/update/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      },
+      body: JSON.stringify(data),
+    })
+
+    console.log('📡 API Response status:', response.status)
+    console.log('📡 API Response headers:', Object.fromEntries(response.headers.entries()))
+
+    if (!response.ok) {
+      let errorMessage = `Failed to update career: ${response.statusText}`
+      try {
+        const errorData = await response.json()
+        console.error('❌ API Error response:', errorData)
+        errorMessage = errorData.error || errorData.message || errorMessage
+      } catch (parseError) {
+        console.error('❌ Could not parse error response:', parseError)
+      }
+      throw new Error(errorMessage)
+    }
+
+    const result = await response.json()
+    console.log('✅ Career updated successfully:', result)
+    return result
   },
 
   // Delete career
   async delete(id: string) {
+    const token = localStorage.getItem('admin-token')
+    
+    console.log('🚀 Deleting career with ID:', id)
+    console.log('🔑 Using token:', token ? 'Present' : 'Missing')
+    
     const response = await fetch(`${API_BASE_URL}/career/delete/${id}`, {
       method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      },
     })
 
+    console.log('📡 API Response status:', response.status)
+    console.log('📡 API Response headers:', Object.fromEntries(response.headers.entries()))
+
     if (!response.ok) {
-      throw new Error(`Failed to delete career: ${response.statusText}`)
+      let errorMessage = `Failed to delete career: ${response.statusText}`
+      try {
+        const errorData = await response.json()
+        console.error('❌ API Error response:', errorData)
+        errorMessage = errorData.error || errorData.message || errorMessage
+      } catch (parseError) {
+        console.error('❌ Could not parse error response:', parseError)
+      }
+      throw new Error(errorMessage)
     }
 
-    return response.json()
+    const result = await response.json()
+    console.log('✅ Career deleted successfully:', result)
+    return result
   },
 
   // Get featured careers
@@ -372,6 +581,7 @@ export interface Project {
     image?: string
   }
   publishDate?: string
+  status?: 'draft' | 'published'
   createdAt?: string
   updatedAt?: string
 }
@@ -381,9 +591,9 @@ export interface Testimonial {
   name: string
   rating: number
   review: string
-  platform: string
-  featured: boolean
+  clientImage?: string
   date?: string
+  status?: 'draft' | 'published'
   createdAt?: string
   updatedAt?: string
 }
@@ -400,7 +610,7 @@ export interface Career {
   skills: string[]
   postedDate?: string
   applicationDeadline?: string
-  status: 'active' | 'paused' | 'closed'
+  status: 'draft' | 'active' | 'paused' | 'closed'
   createdAt?: string
   updatedAt?: string
 }

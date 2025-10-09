@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import Image from 'next/image'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -35,26 +35,69 @@ export function PortfolioManagement({
   onDeletePortfolio
 }: PortfolioManagementProps) {
   const [currentPage, setCurrentPage] = useState(1)
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm)
   const itemsPerPage = 10
 
-  // Filter data based on search term
-  const filteredPortfolios = projects.filter(portfolio => {
-    const titleMatch = portfolio.title.toLowerCase().includes(searchTerm.toLowerCase())
-    const descriptionMatch = portfolio.description?.toLowerCase().includes(searchTerm.toLowerCase()) || false
-    const categoryMatch = Array.isArray(portfolio.categories) 
-      ? portfolio.categories.some(cat => String(cat).toLowerCase().includes(searchTerm.toLowerCase()))
-      : (portfolio.categories && typeof portfolio.categories === 'string' 
-          ? String(portfolio.categories).toLowerCase().includes(searchTerm.toLowerCase()) 
-          : false)
+  // Debounce search term for better performance
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm)
+    }, 300)
     
-    return titleMatch || descriptionMatch || categoryMatch
-  })
+    return () => clearTimeout(timer)
+  }, [searchTerm])
 
-  // Pagination calculations
-  const totalPages = Math.ceil(filteredPortfolios.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  const paginatedPortfolios = filteredPortfolios.slice(startIndex, endIndex)
+  // Debug: Log the first portfolio to see the data structure
+  console.log('PortfolioManagement - First portfolio data:', projects[0])
+
+  // Filter data based on debounced search term with fallback
+  const filteredPortfolios = useMemo(() => {
+    if (!projects || !Array.isArray(projects)) return []
+    
+    if (!debouncedSearchTerm.trim()) return projects
+    
+    return projects.filter(portfolio => {
+      const titleMatch = portfolio.title?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) || false
+      const descriptionMatch = portfolio.description?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) || false
+      
+      // Check both 'categories' and 'category' fields for backward compatibility
+      const categories = portfolio.categories || (portfolio as { category?: string | string[] }).category || []
+      const categoryArray = Array.isArray(categories) ? categories : [categories]
+      const categoryMatch = categoryArray.some(cat => String(cat).toLowerCase().includes(debouncedSearchTerm.toLowerCase()))
+      
+      return titleMatch || descriptionMatch || categoryMatch
+    })
+  }, [projects, debouncedSearchTerm])
+
+  // Optimized pagination calculations
+  const paginationData = useMemo(() => {
+    const totalPages = Math.ceil(filteredPortfolios.length / itemsPerPage)
+    const startIndex = (currentPage - 1) * itemsPerPage
+    const endIndex = startIndex + itemsPerPage
+    const paginatedPortfolios = filteredPortfolios.slice(startIndex, endIndex)
+    
+    return {
+      totalPages,
+      startIndex,
+      endIndex,
+      paginatedPortfolios
+    }
+  }, [filteredPortfolios, currentPage, itemsPerPage])
+
+  const { totalPages, paginatedPortfolios, startIndex, endIndex } = paginationData
+
+  // Optimized page change handlers
+  const handlePageChange = useCallback((page: number) => {
+    setCurrentPage(page)
+  }, [])
+
+  const handlePreviousPage = useCallback(() => {
+    setCurrentPage(prev => Math.max(prev - 1, 1))
+  }, [])
+
+  const handleNextPage = useCallback(() => {
+    setCurrentPage(prev => Math.min(prev + 1, totalPages))
+  }, [totalPages])
 
   return (
     <div className="space-y-6">
@@ -121,7 +164,7 @@ export function PortfolioManagement({
                     </tr>
                   </thead>
                   <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-                    {paginatedPortfolios.map((portfolio) => (
+                    {paginatedPortfolios.map((portfolio: Project) => (
                       <tr key={portfolio._id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-150">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
@@ -146,27 +189,35 @@ export function PortfolioManagement({
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex flex-wrap gap-1">
-                            {Array.isArray(portfolio.categories) ? 
-                              portfolio.categories.slice(0, 2).map((cat, index) => (
+                            {(() => {
+                              // Check both 'categories' and 'category' fields for backward compatibility
+                              const categories = portfolio.categories || (portfolio as { category?: string | string[] }).category || []
+                              const categoryArray = Array.isArray(categories) ? categories : [categories]
+                              
+                              return categoryArray.slice(0, 2).map((cat, index) => (
                                 <span key={index} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
                                   {cat}
                                 </span>
-                              )) : (
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                                  {portfolio.categories}
+                              ))
+                            })()}
+                            {(() => {
+                              const categories = portfolio.categories || (portfolio as { category?: string | string[] }).category || []
+                              const categoryArray = Array.isArray(categories) ? categories : [categories]
+                              return categoryArray.length > 2 && (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+                                  +{categoryArray.length - 2}
                                 </span>
                               )
-                            }
-                            {Array.isArray(portfolio.categories) && portfolio.categories.length > 2 && (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
-                                +{portfolio.categories.length - 2}
-                              </span>
-                            )}
+                            })()}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                            Published
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            portfolio.status === 'draft' 
+                              ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                              : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                          }`}>
+                            {portfolio.status === 'draft' ? 'Draft' : 'Published'}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
@@ -205,7 +256,7 @@ export function PortfolioManagement({
 
               {/* Mobile Cards */}
               <div className="lg:hidden space-y-4 p-4">
-                {paginatedPortfolios.map((portfolio) => (
+                {paginatedPortfolios.map((portfolio: Project) => (
                   <Card key={portfolio._id} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm hover:shadow-md transition-shadow duration-150">
                     <div className="flex items-start space-x-4">
                       <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -222,21 +273,30 @@ export function PortfolioManagement({
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-medium text-gray-900 dark:text-white truncate">{portfolio.title}</h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-sm font-medium text-gray-900 dark:text-white truncate">{portfolio.title}</h3>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                            portfolio.status === 'draft' 
+                              ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                              : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                          }`}>
+                            {portfolio.status === 'draft' ? 'Draft' : 'Published'}
+                          </span>
+                        </div>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{portfolio.description}</p>
                         <div className="flex items-center justify-between mt-3">
                           <div className="flex flex-wrap gap-1">
-                            {Array.isArray(portfolio.categories) ? 
-                              portfolio.categories.slice(0, 2).map((cat, index) => (
+                            {(() => {
+                              // Check both 'categories' and 'category' fields for backward compatibility
+                              const categories = portfolio.categories || (portfolio as { category?: string | string[] }).category || []
+                              const categoryArray = Array.isArray(categories) ? categories : [categories]
+                              
+                              return categoryArray.slice(0, 2).map((cat, index) => (
                                 <span key={index} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
                                   {cat}
                                 </span>
-                              )) : (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                                  {portfolio.categories}
-                                </span>
-                              )
-                            }
+                              ))
+                            })()}
                           </div>
                           <div className="flex items-center space-x-1">
                             <Button
@@ -277,7 +337,7 @@ export function PortfolioManagement({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      onClick={handlePreviousPage}
                       disabled={currentPage === 1}
                       className="flex items-center"
                     >
@@ -294,7 +354,7 @@ export function PortfolioManagement({
                             key={pageNum}
                             variant={currentPage === pageNum ? "default" : "outline"}
                             size="sm"
-                            onClick={() => setCurrentPage(pageNum)}
+                            onClick={() => handlePageChange(pageNum)}
                             className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                               currentPage === pageNum 
                                 ? "z-10 bg-green-50 border-green-500 text-green-600 dark:bg-green-900/20 dark:border-green-400 dark:text-green-400" 
@@ -310,7 +370,7 @@ export function PortfolioManagement({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      onClick={handleNextPage}
                       disabled={currentPage === totalPages}
                       className="flex items-center"
                     >

@@ -5,17 +5,41 @@ import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
 import { RefreshCw, Sidebar } from 'lucide-react'
 import { AppSidebar } from '@/components/admin/app-sidebar'
-import { PortfolioForm } from '@/components/admin/PortfolioForm'
-import { TestimonialForm } from '@/components/admin/TestimonialForm'
-import { CareerForm } from '@/components/admin/CareerForm'
-import { Dashboard } from '@/components/admin/Dashboard'
-import { PortfolioManagement } from '@/components/admin/PortfolioManagement'
-import { TestimonialsManagement } from '@/components/admin/TestimonialsManagement'
-import { CareersManagement } from '@/components/admin/CareersManagement'
-import { MediaManagement } from '@/components/admin/MediaManagement'
-import { Analytics } from '@/components/admin/Analytics'
-import { Settings } from '@/components/admin/Settings'
-import { type Project, type Testimonial, type Career } from '@/lib/api'
+import dynamic from 'next/dynamic'
+import { Suspense } from 'react'
+
+// Lazy load heavy components
+const PortfolioForm = dynamic(() => import('@/components/admin/PortfolioForm').then(mod => ({ default: mod.PortfolioForm })), {
+  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
+})
+const TestimonialForm = dynamic(() => import('@/components/admin/TestimonialForm').then(mod => ({ default: mod.TestimonialForm })), {
+  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
+})
+const CareerForm = dynamic(() => import('@/components/admin/CareerForm').then(mod => ({ default: mod.CareerForm })), {
+  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
+})
+const Dashboard = dynamic(() => import('@/components/admin/Dashboard').then(mod => ({ default: mod.Dashboard })), {
+  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
+})
+const PortfolioManagement = dynamic(() => import('@/components/admin/PortfolioManagement').then(mod => ({ default: mod.PortfolioManagement })), {
+  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
+})
+const TestimonialsManagement = dynamic(() => import('@/components/admin/TestimonialsManagement').then(mod => ({ default: mod.TestimonialsManagement })), {
+  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
+})
+const CareersManagement = dynamic(() => import('@/components/admin/CareersManagement').then(mod => ({ default: mod.CareersManagement })), {
+  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
+})
+const MediaManagement = dynamic(() => import('@/components/admin/MediaManagement').then(mod => ({ default: mod.MediaManagement })), {
+  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
+})
+const Analytics = dynamic(() => import('@/components/admin/Analytics').then(mod => ({ default: mod.Analytics })), {
+  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
+})
+const Settings = dynamic(() => import('@/components/admin/Settings').then(mod => ({ default: mod.Settings })), {
+  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
+})
+import { type Project, type Testimonial, type Career, projectsApi, testimonialsApi, careersApi } from '@/lib/api'
 import toast from 'react-hot-toast'
 import Swal from 'sweetalert2'
 
@@ -166,9 +190,33 @@ export default function AdminLayoutClient() {
     }
   }, [isClient])
 
-  // Fetch data function
-  const fetchData = useCallback(async () => {
+  // Fetch data function with caching and optimization
+  const fetchData = useCallback(async (forceRefresh = false) => {
     if (!isClient) return
+    
+    // Check cache first (unless force refresh)
+    if (!forceRefresh) {
+      const cachedData = localStorage.getItem('admin-cache')
+      const cacheTime = localStorage.getItem('admin-cache-time')
+      
+      if (cachedData && cacheTime) {
+        const cacheAge = Date.now() - parseInt(cacheTime)
+        const CACHE_DURATION = 10 * 60 * 1000 // 10 minutes for better performance
+        
+        if (cacheAge < CACHE_DURATION) {
+          try {
+            const parsed = JSON.parse(cachedData)
+            setProjects(parsed.projects || [])
+            setTestimonials(parsed.testimonials || [])
+            setCareers(parsed.careers || [])
+            setLastRefresh(new Date(parseInt(cacheTime)))
+            return
+          } catch {
+            console.warn('Cache parse error, fetching fresh data')
+          }
+        }
+      }
+    }
     
     setIsDataLoading(true)
     setDataError(null)
@@ -180,27 +228,65 @@ export default function AdminLayoutClient() {
         ...(token && { 'Authorization': `Bearer ${token}` })
       }
       
-      // Fetch all data from Vercel API
+      // Fetch data with optimized caching
       const [portfoliosRes, testimonialsRes, careersRes] = await Promise.all([
-        fetch('https://nextcoderapi.vercel.app/portfolios', { headers }).then(res => {
+        fetch('https://nextcoderapi.vercel.app/portfolios', { 
+          headers,
+          cache: 'force-cache',
+          next: { revalidate: 300 } // 5 minutes
+        }).then(async res => {
           if (!res.ok) throw new Error(`Portfolios API error: ${res.status}`)
-          return res.json()
+          try {
+            return await res.json()
+          } catch (parseError) {
+            console.error('Error parsing portfolios JSON:', parseError)
+            return []
+          }
         }),
-        fetch('https://nextcoderapi.vercel.app/testimonials', { headers }).then(res => {
+        fetch('https://nextcoderapi.vercel.app/testimonials', { 
+          headers,
+          cache: 'force-cache',
+          next: { revalidate: 300 }
+        }).then(async res => {
           if (!res.ok) throw new Error(`Testimonials API error: ${res.status}`)
-          return res.json()
+          try {
+            return await res.json()
+          } catch (parseError) {
+            console.error('Error parsing testimonials JSON:', parseError)
+            return []
+          }
         }),
-        fetch('https://nextcoderapi.vercel.app/careers', { headers }).then(res => {
+        fetch('https://nextcoderapi.vercel.app/careers', { 
+          headers,
+          cache: 'force-cache',
+          next: { revalidate: 300 }
+        }).then(async res => {
           if (!res.ok) throw new Error(`Careers API error: ${res.status}`)
-          return res.json()
+          try {
+            return await res.json()
+          } catch (parseError) {
+            console.error('Error parsing careers JSON:', parseError)
+            return []
+          }
         })
       ])
 
+      const data = {
+        projects: portfoliosRes || [],
+        testimonials: testimonialsRes || [],
+        careers: careersRes || []
+      }
+
       // Set the real data from Vercel API
-      setProjects(portfoliosRes || [])
-      setTestimonials(testimonialsRes || [])
-      setCareers(careersRes || [])
+      setProjects(data.projects)
+      setTestimonials(data.testimonials)
+      setCareers(data.careers)
       setLastRefresh(new Date())
+      
+      // Cache the data
+      localStorage.setItem('admin-cache', JSON.stringify(data))
+      localStorage.setItem('admin-cache-time', Date.now().toString())
+      
     } catch (error) {
       console.error('Error fetching data:', error)
       setDataError(error instanceof Error ? error.message : 'Failed to fetch data')
@@ -607,24 +693,15 @@ export default function AdminLayoutClient() {
 
     if (result.isConfirmed) {
       try {
-        const token = localStorage.getItem('admin-token')
-        const response = await fetch(`https://nextcoderapi.vercel.app/${type === 'portfolio' ? 'portfolio' : type === 'testimonial' ? 'testimonial' : 'career'}/delete/${id}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        })
-
-        if (!response.ok) {
-          throw new Error(`Failed to delete ${type}`)
-        }
-
-        // Remove from local state
+        // Use the appropriate API function
         if (type === 'portfolio') {
+          await projectsApi.delete(id)
           setProjects(prev => prev.filter(p => p._id !== id))
         } else if (type === 'testimonial') {
+          await testimonialsApi.delete(id)
           setTestimonials(prev => prev.filter(t => t._id !== id))
         } else if (type === 'career') {
+          await careersApi.delete(id)
           setCareers(prev => prev.filter(c => c._id !== id))
         }
 
@@ -749,7 +826,7 @@ export default function AdminLayoutClient() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={fetchData}
+                onClick={() => fetchData(true)}
                 disabled={isDataLoading}
                 className="flex items-center space-x-2"
               >
@@ -776,103 +853,113 @@ export default function AdminLayoutClient() {
             </div>
           )}
 
-          {/* Dashboard Content */}
-          {activeTab === 'dashboard' && (
-            <Dashboard
-              user={user}
-              projects={projects}
-              testimonials={testimonials}
-              careers={careers}
-              analyticsData={analyticsData}
-              analyticsLoading={analyticsLoading}
-              lastRefresh={lastRefresh}
-              isDataLoading={isDataLoading}
-              onRefresh={fetchData}
-              onTabChange={(tab) => {
-                window.location.hash = `#${tab}`
-              }}
-            />
-          )}
+          {/* Main Content with Suspense */}
+          <Suspense fallback={
+            <div className="flex items-center justify-center p-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          }>
+            {/* Dashboard Content */}
+            {activeTab === 'dashboard' && (
+              <Dashboard
+                user={user}
+                projects={projects}
+                testimonials={testimonials}
+                careers={careers}
+                analyticsData={analyticsData}
+                analyticsLoading={analyticsLoading}
+                lastRefresh={lastRefresh}
+                isDataLoading={isDataLoading}
+                onRefresh={fetchData}
+                onTabChange={(tab) => {
+                  window.location.hash = `#${tab}`
+                }}
+              />
+            )}
 
-          {/* Portfolio Management */}
-          {activeTab === 'portfolio' && (
-            <PortfolioManagement
-              projects={projects}
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              onAddPortfolio={() => { setEditingItem(null); setShowPortfolioForm(true); }}
-              onEditPortfolio={(portfolio) => handleEdit(portfolio as unknown as Record<string, unknown>, 'portfolio')}
-              onDeletePortfolio={(id) => handleDelete(id, 'portfolio')}
-            />
-          )}
+            {/* Portfolio Management */}
+            {activeTab === 'portfolio' && (
+              <PortfolioManagement
+                projects={projects}
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                onAddPortfolio={() => { 
+                  setEditingItem(null); 
+                  setShowPortfolioForm(true); 
+                }}
+                onEditPortfolio={(portfolio) => handleEdit(portfolio as unknown as Record<string, unknown>, 'portfolio')}
+                onDeletePortfolio={(id) => handleDelete(id, 'portfolio')}
+              />
+            )}
 
-          {/* Testimonials Management */}
-          {activeTab === 'testimonials' && (
-            <TestimonialsManagement
-              testimonials={testimonials}
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              onAddTestimonial={() => { setEditingItem(null); setShowTestimonialForm(true); }}
-              onEditTestimonial={(testimonial) => handleEdit(testimonial as unknown as Record<string, unknown>, 'testimonial')}
-              onDeleteTestimonial={(id) => handleDelete(id, 'testimonial')}
-            />
-          )}
+            {/* Testimonials Management */}
+            {activeTab === 'testimonials' && (
+              <TestimonialsManagement
+                testimonials={testimonials}
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                onAddTestimonial={() => { setEditingItem(null); setShowTestimonialForm(true); }}
+                onEditTestimonial={(testimonial) => handleEdit(testimonial as unknown as Record<string, unknown>, 'testimonial')}
+                onDeleteTestimonial={(id) => handleDelete(id, 'testimonial')}
+              />
+            )}
 
-          {/* Careers Management */}
-          {activeTab === 'careers' && (
-            <CareersManagement
-              careers={careers}
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              onAddCareer={() => { setEditingItem(null); setShowCareerForm(true); }}
-              onEditCareer={(career) => handleEdit(career as unknown as Record<string, unknown>, 'career')}
-              onDeleteCareer={(id) => handleDelete(id, 'career')}
-            />
-          )}
+            {/* Careers Management */}
+            {activeTab === 'careers' && (
+              <CareersManagement
+                careers={careers}
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                onAddCareer={() => { setEditingItem(null); setShowCareerForm(true); }}
+                onEditCareer={(career) => handleEdit(career as unknown as Record<string, unknown>, 'career')}
+                onDeleteCareer={(id) => handleDelete(id, 'career')}
+              />
+            )}
 
-          {/* Media Management */}
-          {activeTab === 'media' && (
-            <MediaManagement
-              onUploadSuccess={(url) => {
-                console.log('New media uploaded:', url)
-                // You can add logic here to refresh media list or update state
-              }}
-            />
-          )}
+            {/* Media Management */}
+            {activeTab === 'media' && (
+              <MediaManagement
+                onUploadSuccess={(url) => {
+                  console.log('New media uploaded:', url)
+                  // You can add logic here to refresh media list or update state
+                }}
+              />
+            )}
 
-          {/* Analytics Dashboard */}
-          {activeTab === 'analytics' && (
-            <Analytics
-              projects={projects}
-              testimonials={testimonials}
-              careers={careers}
-              analyticsData={analyticsData}
-              analyticsLoading={analyticsLoading}
-              lastRefresh={lastRefresh}
-              isDataLoading={isDataLoading}
-              onRefresh={() => {
-                    setAnalyticsLoading(true)
-                fetchData().finally(() => setAnalyticsLoading(false))
-              }}
-              onTabChange={(tab) => {
-                window.location.hash = `#${tab}`
-              }}
-            />
-          )}
+            {/* Analytics Dashboard */}
+            {activeTab === 'analytics' && (
+              <Analytics
+                projects={projects}
+                testimonials={testimonials}
+                careers={careers}
+                analyticsData={analyticsData}
+                analyticsLoading={analyticsLoading}
+                lastRefresh={lastRefresh}
+                isDataLoading={isDataLoading}
+                onRefresh={() => {
+                      setAnalyticsLoading(true)
+                  fetchData().finally(() => setAnalyticsLoading(false))
+                }}
+                onTabChange={(tab) => {
+                  window.location.hash = `#${tab}`
+                }}
+              />
+            )}
 
-          {/* Settings */}
-          {activeTab === 'settings' && (
-            <Settings
-              settings={settings}
-              onUpdateSettings={updateSettings}
-              onSaveSettings={handleSaveSettings}
-              onExportSettings={handleExportSettings}
-              onImportSettings={handleImportSettings}
-              onResetSettings={handleResetSettings}
-              onThemeChange={handleThemeChange}
-              isSaving={isSaving}
-            />
-                              )}
+            {/* Settings */}
+            {activeTab === 'settings' && (
+              <Settings
+                settings={settings}
+                onUpdateSettings={updateSettings}
+                onSaveSettings={handleSaveSettings}
+                onExportSettings={handleExportSettings}
+                onImportSettings={handleImportSettings}
+                onResetSettings={handleResetSettings}
+                onThemeChange={handleThemeChange}
+                isSaving={isSaving}
+              />
+            )}
+          </Suspense>
                             </div>
                               </div>
 

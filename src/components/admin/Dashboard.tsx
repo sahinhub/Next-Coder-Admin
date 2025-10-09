@@ -61,14 +61,6 @@ export function Dashboard({
       color: 'bg-gradient-to-r from-green-500 to-green-600' 
     },
     { 
-      name: 'Featured Testimonials', 
-      value: (testimonials?.filter(t => t.featured)?.length || 0).toString(), 
-      change: '+8%', 
-      changeType: 'positive' as const, 
-      icon: MessageSquare, 
-      color: 'bg-gradient-to-r from-blue-500 to-blue-600' 
-    },
-    { 
       name: 'Active Job Postings', 
       value: (careers?.filter(c => c.status === 'active')?.length || 0).toString(), 
       change: '+5%', 
@@ -174,14 +166,9 @@ export function Dashboard({
                   </div>
                   <div>
                     <h4 className="font-medium text-gray-900 dark:text-white">{testimonial.name}</h4>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{testimonial.platform} • ⭐ {testimonial.rating}/5</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">⭐ {testimonial.rating}/5</p>
                   </div>
                 </div>
-                {testimonial.featured && (
-                  <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-                    Featured
-                  </Badge>
-                )}
               </div>
             ))}
           </CardContent>

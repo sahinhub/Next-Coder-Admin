@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { v2 as cloudinary } from 'cloudinary'
+import { authenticateRequest } from '@/lib/jwt'
 
 // Configure Cloudinary
 cloudinary.config({
@@ -8,24 +9,14 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 })
 
-// Authentication middleware
-function authenticateRequest(request: NextRequest): boolean {
-  const authHeader = request.headers.get('authorization')
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return false
-  }
-  
-  const token = authHeader.substring(7)
-  // In production, verify JWT token here
-  // For now, check if token exists and is not empty
-  return token.length > 0
-}
-
 export async function DELETE(request: NextRequest) {
-  // SECURITY: Authenticate request
-  if (!authenticateRequest(request)) {
+  // SECURITY: Authenticate request with JWT verification
+  const authHeader = request.headers.get('authorization')
+  const user = authenticateRequest(authHeader)
+  
+  if (!user) {
     return NextResponse.json(
-      { error: 'Unauthorized access' },
+      { error: 'Unauthorized access. Valid JWT token required.' },
       { status: 401 }
     )
   }
