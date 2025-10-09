@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import Image from 'next/image'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
 import { RefreshCw, Sidebar } from 'lucide-react'
@@ -307,10 +308,17 @@ export default function AdminLayoutClient() {
     }
   }, [isClient])
 
-  // Load data on mount
+  // Load data on mount with immediate loading state
   useEffect(() => {
     if (isClient && !authLoading) {
-      fetchData()
+      // Set loading state immediately for better UX
+      setIsDataLoading(true)
+      // Small delay to allow skeleton to render
+      const timer = setTimeout(() => {
+        fetchData()
+      }, 50)
+      
+      return () => clearTimeout(timer)
     }
   }, [isClient, authLoading, fetchData])
 
@@ -752,10 +760,19 @@ export default function AdminLayoutClient() {
   // Prevent hydration mismatch by only rendering on client
   if (!isClient || !mounted || authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading admin panel...</p>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-center">
+            <Image
+              src="/We-Next-Coder.png"
+              alt="We Next Coder"
+              width={60}
+              height={60}
+              priority
+              className="mx-auto mb-4"
+            />
+            <div className="loading-skeleton h-3 w-24 mx-auto rounded"></div>
+          </div>
         </div>
       </div>
     )

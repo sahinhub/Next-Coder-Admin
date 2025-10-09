@@ -19,7 +19,7 @@ export default function HomePage() {
       } else {
         router.push('/login')
       }
-    }, 50) // Reduced delay
+    }, 10) // Minimal delay for better LCP
 
     return () => clearTimeout(timer)
   }, [router])

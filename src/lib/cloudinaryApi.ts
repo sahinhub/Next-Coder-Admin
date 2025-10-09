@@ -95,7 +95,13 @@ export async function getAllCloudinaryMedia(
     })
     
     if (!response.ok) {
-      throw new Error(`API error: ${response.status} ${response.statusText}`)
+      const errorData = await response.json().catch(() => ({}))
+      console.error('Cloudinary API error:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorData
+      })
+      throw new Error(`API error: ${response.status} ${response.statusText} - ${errorData.error || 'Unknown error'}`)
     }
     
     const data = await response.json()

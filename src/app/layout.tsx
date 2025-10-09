@@ -56,6 +56,9 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://nextcoderapi.vercel.app" />
         <link rel="preconnect" href="https://nextcoderapi.vercel.app" />
         <link rel="preconnect" href="https://res.cloudinary.com" />
+        <link rel="preload" href="/api/portfolios" as="fetch" crossOrigin="anonymous" />
+        <link rel="preload" href="/api/testimonials" as="fetch" crossOrigin="anonymous" />
+        <link rel="preload" href="/api/careers" as="fetch" crossOrigin="anonymous" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
         {/* Critical CSS inline for faster rendering */}
         <style dangerouslySetInnerHTML={{
