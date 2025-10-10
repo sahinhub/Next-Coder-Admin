@@ -37,6 +37,8 @@ const formSchema = z.object({
   liveUrl: z.string().optional(),
   thumbnail: z.string().optional(),
   images: z.array(z.string()).optional(),
+  publishDate: z.string().optional(),
+  status: z.enum(['draft', 'published']).optional(),
   client: z.object({
     name: z.string().optional(),
     designation: z.string().optional(),
@@ -157,6 +159,8 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
         const images = portfolio?.images || portfolio?.gallery || []
         return Array.isArray(images) ? images : [images]
       })(),
+      publishDate: portfolio?.publishDate || new Date().toISOString().split('T')[0],
+      status: portfolio?.status || 'published',
       client: portfolio?.client || {
         name: '',
         designation: '',
@@ -238,6 +242,8 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
         liveUrl: liveUrl,
         thumbnail: portfolio.thumbnail || '',
         images: imageArray,
+        publishDate: portfolio.publishDate || new Date().toISOString().split('T')[0],
+        status: portfolio.status || 'published',
         client: portfolio.client || {
           name: '',
           designation: '',
@@ -488,8 +494,8 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
           testimonial: data.client?.testimonial || '',
           image: data.client?.image || '', // Cloudinary URL for client avatar
         },
-        publishDate: new Date().toISOString(),
-        status: 'published', // Default status for new portfolios
+        publishDate: data.publishDate || new Date().toISOString(),
+        status: data.status || 'published',
         // Additional metadata for Cloudinary images
         imageMetadata: {
           thumbnail: data.thumbnail ? {
@@ -915,6 +921,46 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
                       <FormLabel>Live URL</FormLabel>
                       <FormControl>
                         <Input placeholder="https://example.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Project Status and Publishing */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="publishDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Publish Date</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="date" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status</FormLabel>
+                      <FormControl>
+                        <select 
+                          {...field} 
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <option value="published">Published</option>
+                          <option value="draft">Draft</option>
+                        </select>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
