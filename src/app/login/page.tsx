@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -83,11 +84,25 @@ export default function LoginPage() {
         
         router.push('/admin')
       } else {
-        throw new Error(data.error || 'Login failed')
+        // Show error toast without throwing console error
+        toast.error(data.error || 'Invalid email or password', {
+          duration: 4000,
+          position: 'bottom-right',
+          style: {
+            background: '#ef4444',
+            color: '#fff',
+            borderRadius: '8px',
+            padding: '12px 16px',
+            fontSize: '14px',
+            fontWeight: '500',
+          },
+        })
+        return
       }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
-      console.error('Login error:', error)
-      toast.error(error instanceof Error ? error.message : 'Invalid email or password', {
+      // Show error toast without console error
+      toast.error('Invalid email or password', {
         duration: 4000,
         position: 'bottom-right',
         style: {
@@ -178,11 +193,25 @@ export default function LoginPage() {
         
         router.push('/admin')
       } else {
-        throw new Error(data.error || 'Registration failed')
+        // Show error toast without throwing console error
+        toast.error(data.error || 'Registration failed', {
+          duration: 4000,
+          position: 'bottom-right',
+          style: {
+            background: '#ef4444',
+            color: '#fff',
+            borderRadius: '8px',
+            padding: '12px 16px',
+            fontSize: '14px',
+            fontWeight: '500',
+          },
+        })
+        return
       }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
-      console.error('Registration error:', error)
-      toast.error(error instanceof Error ? error.message : 'Failed to create account', {
+      // Show error toast without console error
+      toast.error('Failed to create account', {
         duration: 4000,
         position: 'bottom-right',
         style: {
@@ -203,6 +232,16 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
+          <div className="flex justify-center mb-6">
+            <Image 
+              src="/We-Next-Coder.png" 
+              alt="We Next Coder Logo" 
+              width={64}
+              height={64}
+              className="h-16 w-auto"
+              priority
+            />
+          </div>
           <h2 className="mt-6 text-3xl font-extrabold text-gray-900 dark:text-white">
             {isRegistering ? 'Create Admin Account' : 'Sign in to Admin Panel'}
           </h2>

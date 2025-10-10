@@ -24,6 +24,9 @@ interface DashboardProps {
   careers: Career[]
   analyticsData: {
     totalViews: number
+    portfolioViews: number
+    testimonialViews: number
+    careerViews: number
     monthlyGrowth: number
   }
   analyticsLoading: boolean
@@ -50,6 +53,7 @@ export function Dashboard({
   const recentTestimonials = testimonials.slice(0, 3)
   const recentCareers = careers.slice(0, 3)
 
+
   // Stats for dashboard
   const stats = [
     { 
@@ -75,11 +79,19 @@ export function Dashboard({
       changeType: 'positive' as const, 
       icon: Eye, 
       color: 'bg-gradient-to-r from-purple-500 to-purple-600' 
+    },
+    { 
+      name: 'Total Testimonials', 
+      value: (testimonials?.length || 0).toString(), 
+      change: '+8%', 
+      changeType: 'positive' as const, 
+      icon: MessageSquare, 
+      color: 'bg-gradient-to-r from-blue-500 to-blue-600' 
     }
   ]
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Welcome Section */}
       <div className="bg-gradient-to-r from-green-600 to-blue-600 rounded-xl p-6 text-white">
         <div className="flex items-center justify-between">
@@ -106,7 +118,7 @@ export function Dashboard({
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
         {stats.map((stat, index) => (
           <Card key={index} className="hover:shadow-lg transition-shadow duration-200">
             <CardContent className="p-6">
@@ -128,8 +140,79 @@ export function Dashboard({
         ))}
       </div>
 
+      {/* Performance Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+        <Card className="p-6 rounded-xl shadow-sm">
+          <CardHeader className="flex-row items-center justify-between p-0 mb-4">
+            <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">Portfolio Performance</CardTitle>
+            <div className="w-8 h-8 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
+              <TrendingUp className="w-4 h-4 text-green-600 dark:text-green-400" />
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              {analyticsData.portfolioViews.toLocaleString()}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              {Math.floor((analyticsData.portfolioViews / analyticsData.totalViews) * 100)}% of total views
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="p-6 rounded-xl shadow-sm">
+          <CardHeader className="flex-row items-center justify-between p-0 mb-4">
+            <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">Testimonial Engagement</CardTitle>
+            <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+              <MessageSquare className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              {analyticsData.testimonialViews.toLocaleString()}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              {Math.floor((analyticsData.testimonialViews / analyticsData.totalViews) * 100)}% of total views
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="p-6 rounded-xl shadow-sm">
+          <CardHeader className="flex-row items-center justify-between p-0 mb-4">
+            <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">Career Applications</CardTitle>
+            <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900 rounded-full flex items-center justify-center">
+              <Users className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              {analyticsData.careerViews.toLocaleString()}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              {Math.floor((analyticsData.careerViews / analyticsData.totalViews) * 100)}% of total views
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="p-6 rounded-xl shadow-sm">
+          <CardHeader className="flex-row items-center justify-between p-0 mb-4">
+            <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">Growth Rate</CardTitle>
+            <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center">
+              <Eye className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="text-3xl font-bold text-green-600 dark:text-green-400 mb-2">
+              +{analyticsData.monthlyGrowth}%
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              Monthly growth rate
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Recent Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         {/* Recent Portfolios */}
         <Card className="p-6 rounded-xl shadow-sm">
           <CardHeader className="flex-row items-center justify-between p-0 mb-6">
