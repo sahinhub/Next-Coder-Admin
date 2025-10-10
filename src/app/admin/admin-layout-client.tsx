@@ -7,39 +7,18 @@ import { Button } from '@/components/ui/button'
 import { RefreshCw, Sidebar } from 'lucide-react'
 import { AppSidebar } from '@/components/admin/app-sidebar'
 import dynamic from 'next/dynamic'
-import { Suspense } from 'react'
 
-// Lazy load heavy components
-const PortfolioForm = dynamic(() => import('@/components/admin/PortfolioForm').then(mod => ({ default: mod.PortfolioForm })), {
-  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
-})
-const TestimonialForm = dynamic(() => import('@/components/admin/TestimonialForm').then(mod => ({ default: mod.TestimonialForm })), {
-  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
-})
-const CareerForm = dynamic(() => import('@/components/admin/CareerForm').then(mod => ({ default: mod.CareerForm })), {
-  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
-})
-const Dashboard = dynamic(() => import('@/components/admin/Dashboard').then(mod => ({ default: mod.Dashboard })), {
-  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
-})
-const PortfolioManagement = dynamic(() => import('@/components/admin/PortfolioManagement').then(mod => ({ default: mod.PortfolioManagement })), {
-  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
-})
-const TestimonialsManagement = dynamic(() => import('@/components/admin/TestimonialsManagement').then(mod => ({ default: mod.TestimonialsManagement })), {
-  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
-})
-const CareersManagement = dynamic(() => import('@/components/admin/CareersManagement').then(mod => ({ default: mod.CareersManagement })), {
-  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
-})
-const MediaManagement = dynamic(() => import('@/components/admin/MediaManagement').then(mod => ({ default: mod.MediaManagement })), {
-  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
-})
-const Analytics = dynamic(() => import('@/components/admin/Analytics').then(mod => ({ default: mod.Analytics })), {
-  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
-})
-const Settings = dynamic(() => import('@/components/admin/Settings').then(mod => ({ default: mod.Settings })), {
-  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
-})
+// Lazy load heavy components without loading states for instant transitions
+const PortfolioForm = dynamic(() => import('@/components/admin/PortfolioForm').then(mod => ({ default: mod.PortfolioForm })))
+const TestimonialForm = dynamic(() => import('@/components/admin/TestimonialForm').then(mod => ({ default: mod.TestimonialForm })))
+const CareerForm = dynamic(() => import('@/components/admin/CareerForm').then(mod => ({ default: mod.CareerForm })))
+const Dashboard = dynamic(() => import('@/components/admin/Dashboard').then(mod => ({ default: mod.Dashboard })))
+const PortfolioManagement = dynamic(() => import('@/components/admin/PortfolioManagement').then(mod => ({ default: mod.PortfolioManagement })))
+const TestimonialsManagement = dynamic(() => import('@/components/admin/TestimonialsManagement').then(mod => ({ default: mod.TestimonialsManagement })))
+const CareersManagement = dynamic(() => import('@/components/admin/CareersManagement').then(mod => ({ default: mod.CareersManagement })))
+const MediaManagement = dynamic(() => import('@/components/admin/MediaManagement').then(mod => ({ default: mod.MediaManagement })))
+const Analytics = dynamic(() => import('@/components/admin/Analytics').then(mod => ({ default: mod.Analytics })))
+const Settings = dynamic(() => import('@/components/admin/Settings').then(mod => ({ default: mod.Settings })))
 import { type Project, type Testimonial, type Career, projectsApi, testimonialsApi, careersApi } from '@/lib/api'
 import toast from 'react-hot-toast'
 import Swal from 'sweetalert2'
@@ -155,10 +134,34 @@ export default function AdminLayoutClient() {
       }
     }
     
+    // Detect system theme for dark mode
+    const detectSystemTheme = () => {
+      if (typeof window !== 'undefined') {
+        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+        setSettings(prev => ({
+          ...prev,
+          display: {
+            ...prev.display,
+            darkMode: isDark
+          }
+        }))
+      }
+    }
+    
     checkMobile()
+    detectSystemTheme()
+    
     if (typeof window !== 'undefined') {
       window.addEventListener('resize', checkMobile)
-      return () => window.removeEventListener('resize', checkMobile)
+      
+      // Listen for system theme changes
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+      mediaQuery.addEventListener('change', detectSystemTheme)
+      
+      return () => {
+        window.removeEventListener('resize', checkMobile)
+        mediaQuery.removeEventListener('change', detectSystemTheme)
+      }
     }
   }, [])
 
@@ -181,12 +184,12 @@ export default function AdminLayoutClient() {
     return () => window.removeEventListener('hashchange', handleHashChange)
   }, [isClient])
 
-  // Auth loading effect
+  // Auth loading effect - reduced for faster LCP
   useEffect(() => {
     if (isClient) {
       const timer = setTimeout(() => {
         setAuthLoading(false)
-      }, 1000)
+      }, 300) // Reduced from 1000ms to 300ms
       return () => clearTimeout(timer)
     }
   }, [isClient])
@@ -229,9 +232,9 @@ export default function AdminLayoutClient() {
         ...(token && { 'Authorization': `Bearer ${token}` })
       }
       
-      // Fetch data with optimized caching
+      // Fetch data with optimized caching using local API routes
       const [portfoliosRes, testimonialsRes, careersRes] = await Promise.all([
-        fetch('https://nextcoderapi.vercel.app/portfolios', { 
+        fetch('/api/portfolios', { 
           headers,
           cache: 'force-cache',
           next: { revalidate: 300 } // 5 minutes
@@ -244,7 +247,7 @@ export default function AdminLayoutClient() {
             return []
           }
         }),
-        fetch('https://nextcoderapi.vercel.app/testimonials', { 
+        fetch('/api/testimonials', { 
           headers,
           cache: 'force-cache',
           next: { revalidate: 300 }
@@ -257,7 +260,7 @@ export default function AdminLayoutClient() {
             return []
           }
         }),
-        fetch('https://nextcoderapi.vercel.app/careers', { 
+        fetch('/api/careers', { 
           headers,
           cache: 'force-cache',
           next: { revalidate: 300 }
@@ -592,7 +595,9 @@ export default function AdminLayoutClient() {
           }
         })
         
-        // Reset to default settings
+        // Reset to default settings - detect system theme
+        const isSystemDark = typeof window !== 'undefined' ? window.matchMedia('(prefers-color-scheme: dark)').matches : false
+        
         const defaultSettings = {
           general: {
             siteName: 'Next Coder',
@@ -603,7 +608,7 @@ export default function AdminLayoutClient() {
             language: 'en'
           },
           display: {
-            darkMode: false,
+            darkMode: isSystemDark,
             showAnalytics: true,
             autoSave: true,
             showNotifications: true,
@@ -870,12 +875,8 @@ export default function AdminLayoutClient() {
             </div>
           )}
 
-          {/* Main Content with Suspense */}
-          <Suspense fallback={
-            <div className="flex items-center justify-center p-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            </div>
-          }>
+          {/* Main Content */}
+          <div className="transition-all duration-200 ease-in-out">
             {/* Dashboard Content */}
             {activeTab === 'dashboard' && (
               <Dashboard
@@ -976,7 +977,7 @@ export default function AdminLayoutClient() {
                 isSaving={isSaving}
               />
             )}
-          </Suspense>
+          </div>
                             </div>
                               </div>
 

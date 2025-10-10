@@ -74,7 +74,7 @@ export interface CloudinarySearchParams {
 }
 
 /**
- * Get all media resources from Cloudinary
+ * Get all media resources from Cloudinary with optimized caching
  * Now uses real API endpoint to fetch from Cloudinary portfolios folder
  */
 export async function getAllCloudinaryMedia(
@@ -87,11 +87,38 @@ export async function getAllCloudinaryMedia(
       throw new Error('Authentication required')
     }
 
-    // Call our API endpoint to fetch real Cloudinary data
-    const response = await fetch('/api/cloudinary/portfolios', {
+    // Check cache first for better performance - simplified for LCP
+    const cacheKey = `cloudinary-media-${JSON.stringify(params)}`
+    const cachedData = localStorage.getItem(cacheKey)
+    const cacheTime = localStorage.getItem(`${cacheKey}-time`)
+    
+    if (cachedData && cacheTime) {
+      const cacheAge = Date.now() - parseInt(cacheTime)
+      const CACHE_DURATION = 10 * 60 * 1000 // 10 minutes cache for better performance
+      
+      if (cacheAge < CACHE_DURATION) {
+        try {
+          return JSON.parse(cachedData)
+        } catch {
+          // If cache is corrupted, continue with API call
+        }
+      }
+    }
+
+    // Call our API endpoint to fetch real Cloudinary data with optimized parameters
+    const searchParams = new URLSearchParams()
+    if (params.max_results) searchParams.append('max_results', params.max_results.toString())
+    if (params.next_cursor) searchParams.append('next_cursor', params.next_cursor)
+    if (params.expression) searchParams.append('expression', params.expression)
+    
+    const response = await fetch(`/api/cloudinary/portfolios?${searchParams.toString()}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
+        'Cache-Control': 'max-age=600', // 10 minutes cache
       },
+      // Optimized for LCP
+      cache: 'default',
+      next: { revalidate: 600 }
     })
     
     if (!response.ok) {
@@ -110,6 +137,14 @@ export async function getAllCloudinaryMedia(
     if (data.resources.length === 0 && data.message) {
       console.warn('Using mock data:', data.message)
       return getMockCloudinaryMedia(params)
+    }
+    
+    // Save to cache for better performance
+    try {
+      localStorage.setItem(cacheKey, JSON.stringify(data))
+      localStorage.setItem(`${cacheKey}-time`, Date.now().toString())
+    } catch (cacheError) {
+      console.warn('Failed to cache Cloudinary data:', cacheError)
     }
     
     return data
@@ -280,12 +315,21 @@ export async function getRecentCloudinaryMedia(
  * Convert Cloudinary resource to MediaItem format
  */
 export function convertCloudinaryResourceToMediaItem(resource: CloudinaryResource, folderName?: string) {
+  // Simplified URL optimization for better LCP
+  const getOptimizedUrl = (originalUrl: string) => {
+    if (originalUrl.includes('cloudinary.com')) {
+      // Simple optimization: just add quality auto for better performance
+      return originalUrl.replace('/upload/', '/upload/q_auto,f_auto/')
+    }
+    return originalUrl
+  }
+
   return {
     id: resource.public_id,
-    url: resource.secure_url,
+    url: getOptimizedUrl(resource.secure_url),
     filename: resource.original_filename,
     size: resource.bytes,
-    type: `image/${resource.format}`,
+    type: resource.resource_type === 'image' ? `image/${resource.format}` : `${resource.resource_type}/${resource.format}`,
     uploadedAt: resource.created_at,
     source: 'cloudinary' as const,
     dimensions: {

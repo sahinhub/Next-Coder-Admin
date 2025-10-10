@@ -89,11 +89,11 @@ const MediaCard = memo(({
   return (
     <Card 
       className={`group py-0 hover:shadow-lg transition-all duration-200 w-full cursor-pointer ${
-        isSelected ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20' : ''
+        isSelected ? ' bg-blue-50 dark:bg-blue-900/20' : ''
       }`}
       onClick={() => onToggleSelect(item.id)}
     >
-      <CardContent className="p-0">
+      <CardContent className="p-0 rounded-lg">
         <div className="relative h-36 bg-gray-100 dark:bg-gray-800 rounded-t-lg">
           <Image
             src={item.url}
@@ -648,7 +648,7 @@ export function MediaManagement({ onUploadSuccess }: MediaManagementProps) {
 
   return (
     <div className="space-y-6">
-      {/* WordPress-like Header */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Media Library</h1>
@@ -1000,7 +1000,7 @@ export function MediaManagement({ onUploadSuccess }: MediaManagementProps) {
           <DialogHeader>
             <DialogTitle>Upload Media Files</DialogTitle>
             <DialogDescription>
-              Upload images to your media library. You can select multiple files at once.
+              Upload images, videos, and documents to your media library. You can select multiple files at once.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
@@ -1014,8 +1014,19 @@ export function MediaManagement({ onUploadSuccess }: MediaManagementProps) {
               allowMultiple={true}
               className="mb-4"
               title="Upload Media Files"
-              description="Drag and drop your images here, or click to browse"
-              supportText="Supports: JPG, PNG, GIF, WebP, SVG (max 100MB each)"
+              description="Drag and drop your files here, or click to browse"
+              supportText="Supports: Images (JPG, PNG, GIF, WebP, SVG, AVIF), Videos (MP4, MOV, AVI, WebM), Documents (PDF, DOC, DOCX), Audio (MP3, WAV, OGG) (max 100MB each)"
+              acceptedTypes={[
+                // Images
+                'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml', 'image/avif',
+                // Videos
+                'video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm',
+                // Documents
+                'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                // Audio
+                'audio/mpeg', 'audio/wav', 'audio/ogg'
+              ]}
+              maxSize={100 * 1024 * 1024} // 100MB
             />
           </div>
         </DialogContent>

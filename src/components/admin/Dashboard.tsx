@@ -1,5 +1,6 @@
 'use client'
 
+import { memo, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -36,7 +37,34 @@ interface DashboardProps {
   onTabChange: (tab: string) => void
 }
 
-export function Dashboard({
+// Memoized stat card component for better performance
+const StatCard = memo(({ name, value, change, changeType, icon: Icon, color }: {
+  name: string
+  value: string
+  change: string
+  changeType: 'positive' | 'negative' | 'neutral'
+  icon: React.ComponentType<{ className?: string }>
+  color: string
+}) => (
+  <Card>
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <CardTitle className="text-sm font-medium">{name}</CardTitle>
+      <div className={`p-2 rounded-lg ${color}`}>
+        <Icon className="h-4 w-4 text-white" />
+      </div>
+    </CardHeader>
+    <CardContent>
+      <div className="text-2xl font-bold">{value}</div>
+      <p className={`text-xs ${changeType === 'positive' ? 'text-green-600' : changeType === 'negative' ? 'text-red-600' : 'text-gray-600'}`}>
+        {change} from last month
+      </p>
+    </CardContent>
+  </Card>
+))
+
+StatCard.displayName = 'StatCard'
+
+export const Dashboard = memo(function Dashboard({
   user,
   projects,
   testimonials,
@@ -48,14 +76,13 @@ export function Dashboard({
   onRefresh,
   onTabChange
 }: DashboardProps) {
-  // Recent items for dashboard
-  const recentPortfolios = projects.slice(0, 3)
-  const recentTestimonials = testimonials.slice(0, 3)
-  const recentCareers = careers.slice(0, 3)
+  // Memoize expensive calculations
+  const recentPortfolios = useMemo(() => projects.slice(0, 3), [projects])
+  const recentTestimonials = useMemo(() => testimonials.slice(0, 3), [testimonials])
+  const recentCareers = useMemo(() => careers.slice(0, 3), [careers])
 
-
-  // Stats for dashboard
-  const stats = [
+  // Memoize stats calculation
+  const stats = useMemo(() => [
     { 
       name: 'Total Projects', 
       value: (projects?.length || 0).toString(), 
@@ -88,7 +115,7 @@ export function Dashboard({
       icon: MessageSquare, 
       color: 'bg-gradient-to-r from-blue-500 to-blue-600' 
     }
-  ]
+  ], [projects, careers, testimonials, analyticsData, analyticsLoading])
 
   return (
     <div className="space-y-3">
@@ -120,23 +147,7 @@ export function Dashboard({
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
         {stats.map((stat, index) => (
-          <Card key={index} className="hover:shadow-lg transition-shadow duration-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{stat.name}</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{stat.value}</p>
-                  <div className="flex items-center mt-2">
-                    <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
-                    <span className="text-sm text-green-600 dark:text-green-400">{stat.change}</span>
-                  </div>
-                </div>
-                <div className={`p-3 rounded-lg ${stat.color}`}>
-                  <stat.icon className="w-6 h-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <StatCard key={index} {...stat} />
         ))}
       </div>
 
@@ -284,4 +295,6 @@ export function Dashboard({
       </div>
     </div>
   )
-}
+})
+
+Dashboard.displayName = 'Dashboard'

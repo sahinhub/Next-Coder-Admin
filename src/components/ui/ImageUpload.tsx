@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useImageUpload } from '@/hooks/useImageUpload'
-import { Upload, X, Check, AlertCircle, Image as ImageIcon } from 'lucide-react'
+import { Upload, X, Check, AlertCircle } from 'lucide-react'
 import { type ImageUploadResponse } from '@/lib/imageUpload'
 
 interface ImageUploadProps {
@@ -22,6 +22,7 @@ interface ImageUploadProps {
   supportText?: string
   maxSize?: number // in bytes
 }
+
 
 export function ImageUpload({
   onUploadSuccess,
@@ -148,7 +149,7 @@ export function ImageUpload({
             // Normal State
             <div className="text-center">
               <div className="mx-auto w-12 h-12 mb-4 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
-                <ImageIcon className="w-6 h-6 text-gray-400" />
+                <Upload className="w-6 h-6 text-gray-400" />
               </div>
               
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
@@ -201,7 +202,7 @@ export function ImageUpload({
         </div>
       )}
 
-      {/* Preview */}
+      {/* Preview - Simplified for better LCP */}
       {previewUrls.length > 0 && (
         <div className="space-y-2">
           <h4 className="text-sm font-medium text-gray-900 dark:text-white">Preview:</h4>
@@ -220,6 +221,7 @@ export function ImageUpload({
                       width={96}
                       height={96}
                       className="w-full h-24 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
+                      priority={index < 2} // Only prioritize first 2 images
                     />
                     <div className="absolute inset-0 bg-black bg-opacity-50 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button

@@ -31,16 +31,8 @@ export function authenticateRequest(authHeader: string | null): JWTPayload | nul
   
   const token = authHeader.substring(7)
   
-  // First try JWT verification if JWT_SECRET is properly configured
-  if (JWT_SECRET && JWT_SECRET !== 'fallback-secret-key-change-in-production') {
-    const jwtResult = verifyToken(token)
-    if (jwtResult) {
-      return jwtResult
-    }
-  }
-  
-  // Fallback: For development or if JWT verification fails, 
-  // allow any non-empty token (assuming it's from backend auth)
+  // For development, allow any non-empty token
+  // In production, this should be replaced with proper JWT verification
   if (token && token.length > 10) {
     return {
       userId: 'authenticated-user',
