@@ -40,13 +40,15 @@ export const projectsApi = {
 
   // Get featured projects
   async getFeatured(limit = 6) {
-    const response = await fetch(`${API_BASE_URL}/portfolios/featured/list?limit=${limit}`)
+    const response = await fetch(`${API_BASE_URL}/portfolios`)
 
     if (!response.ok) {
       throw new Error(`Failed to fetch featured projects: ${response.statusText}`)
     }
 
-    return response.json()
+    const data = await response.json()
+    // Return first few items as featured
+    return data.slice(0, limit)
   },
 
   // Get project by ID
@@ -446,13 +448,15 @@ export const careersApi = {
 
   // Get featured careers
   async getFeatured(limit = 6) {
-    const response = await fetch(`${API_BASE_URL}/careers/featured/list?limit=${limit}`)
+    const response = await fetch(`${API_BASE_URL}/careers`)
 
     if (!response.ok) {
       throw new Error(`Failed to fetch featured careers: ${response.statusText}`)
     }
 
-    return response.json()
+    const data = await response.json()
+    // Return first few items as featured
+    return data.slice(0, limit)
   }
 }
 
@@ -530,7 +534,7 @@ export const contactApi = {
 export const analyticsApi = {
   // Get dashboard stats
   async getStats() {
-    const response = await fetch(`${API_BASE_URL}/analytics/stats`)
+    const response = await fetch(`${API_BASE_URL}/analytics/data`)
 
     if (!response.ok) {
       throw new Error(`Failed to fetch analytics stats: ${response.statusText}`)
@@ -539,9 +543,20 @@ export const analyticsApi = {
     return response.json()
   },
 
-  // Get portfolio analytics
+  // Get real-time stats
+  async getRealtimeStats() {
+    const response = await fetch(`${API_BASE_URL}/analytics/realtime`)
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch real-time stats: ${response.statusText}`)
+    }
+
+    return response.json()
+  },
+
+  // Get portfolio analytics (using existing data endpoint)
   async getPortfolioAnalytics() {
-    const response = await fetch(`${API_BASE_URL}/analytics/portfolio`)
+    const response = await fetch(`${API_BASE_URL}/analytics/data`)
 
     if (!response.ok) {
       throw new Error(`Failed to fetch portfolio analytics: ${response.statusText}`)
@@ -550,9 +565,9 @@ export const analyticsApi = {
     return response.json()
   },
 
-  // Get testimonial analytics
+  // Get testimonial analytics (using existing data endpoint)
   async getTestimonialAnalytics() {
-    const response = await fetch(`${API_BASE_URL}/analytics/testimonials`)
+    const response = await fetch(`${API_BASE_URL}/analytics/data`)
 
     if (!response.ok) {
       throw new Error(`Failed to fetch testimonial analytics: ${response.statusText}`)
