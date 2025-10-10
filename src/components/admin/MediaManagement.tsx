@@ -40,6 +40,7 @@ import {
   type MediaItem
 } from '@/lib/cloudinaryApi'
 import toast from 'react-hot-toast'
+import { showSuccessToast } from '@/lib/utils'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -367,20 +368,7 @@ export function MediaManagement({ onUploadSuccess }: MediaManagementProps) {
       onUploadSuccess?.(result.data.url)
       
       // Keep user on same page and state after upload
-      toast.success('Image uploaded successfully!', {
-        duration: 3000,
-        position: 'bottom-right',
-        style: {
-          background: document.documentElement.classList.contains('dark') 
-            ? 'rgba(9, 222, 66,0.3)' 
-            : '#09de42',
-          color: '#fff',
-          borderRadius: '8px',
-          padding: '12px 16px',
-          fontSize: '14px',
-          fontWeight: '500',
-        },
-      })
+      showSuccessToast('Image uploaded successfully!')
     }
   }
 
@@ -403,21 +391,21 @@ export function MediaManagement({ onUploadSuccess }: MediaManagementProps) {
           selectedItems.includes(item.id) ? { ...item, favorite: true } : item
         ))
         // Keep selected items for potential further operations
-        toast.success(`Added ${selectedItems.length} items to favorites`)
+        showSuccessToast(`Added ${selectedItems.length} items to favorites`)
         break
       case 'archive':
         setMediaItems(prev => prev.map(item => 
           selectedItems.includes(item.id) ? { ...item, archived: true } : item
         ))
         // Keep selected items for potential further operations
-        toast.success(`Archived ${selectedItems.length} items`)
+        showSuccessToast(`Archived ${selectedItems.length} items`)
         break
       case 'download':
         selectedItems.forEach(id => {
           const item = mediaItems.find(item => item.id === id)
           if (item) downloadImage(item.url, item.filename)
         })
-        toast.success(`Downloaded ${selectedItems.length} items`)
+        showSuccessToast(`Downloaded ${selectedItems.length} items`)
         break
     }
   }, [selectedItems, mediaItems])
@@ -454,9 +442,9 @@ export function MediaManagement({ onUploadSuccess }: MediaManagementProps) {
           
           if (selectedItems.length > 0) {
             setSelectedItems([])
-            toast.success(`Deleted ${itemsToDelete.length} items from Cloudinary`)
+            showSuccessToast(`Deleted ${itemsToDelete.length} items from Cloudinary`)
           } else {
-            toast.success(`Deleted "${deleteItem!.filename}" from Cloudinary`)
+            showSuccessToast(`Deleted "${deleteItem!.filename}" from Cloudinary`)
           }
         } else {
           // Cloudinary deletion failed, but still remove from local state
@@ -466,9 +454,9 @@ export function MediaManagement({ onUploadSuccess }: MediaManagementProps) {
           
           if (selectedItems.length > 0) {
             setSelectedItems([])
-            toast.success(`Removed ${itemsToDelete.length} items from list (Cloudinary deletion failed)`)
+            showSuccessToast(`Removed ${itemsToDelete.length} items from list (Cloudinary deletion failed)`)
           } else {
-            toast.success(`Removed "${deleteItem!.filename}" from list (Cloudinary deletion failed)`)
+            showSuccessToast(`Removed "${deleteItem!.filename}" from list (Cloudinary deletion failed)`)
           }
         }
       } else {
@@ -478,9 +466,9 @@ export function MediaManagement({ onUploadSuccess }: MediaManagementProps) {
         
         if (selectedItems.length > 0) {
           setSelectedItems([])
-          toast.success(`Removed ${itemsToDelete.length} items from list`)
+          showSuccessToast(`Removed ${itemsToDelete.length} items from list`)
         } else {
-          toast.success(`Removed "${deleteItem!.filename}" from list`)
+          showSuccessToast(`Removed "${deleteItem!.filename}" from list`)
         }
       }
 
@@ -518,7 +506,7 @@ export function MediaManagement({ onUploadSuccess }: MediaManagementProps) {
 
   const copyToClipboard = (url: string) => {
     navigator.clipboard.writeText(url)
-    toast.success('URL copied to clipboard!')
+    showSuccessToast('URL copied to clipboard!')
   }
 
   const downloadImage = (url: string, filename: string) => {
@@ -1023,6 +1011,7 @@ export function MediaManagement({ onUploadSuccess }: MediaManagementProps) {
               onUploadError={(error) => toast.error(error)}
               maxFiles={10}
               allowMultiple={true}
+              showPreview={false}
               className="mb-4"
               title="Upload Media Files"
               description="Drag and drop your files here, or click to browse"
@@ -1148,7 +1137,7 @@ export function MediaManagement({ onUploadSuccess }: MediaManagementProps) {
                     onClick={() => {
                       updateMediaItem(showDetails.id, showDetails)
                       setShowDetails(null)
-                      toast.success('Media updated successfully!')
+                      showSuccessToast('Media updated successfully!')
                     }}
                   >
                     Save Changes

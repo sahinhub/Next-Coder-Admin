@@ -17,15 +17,15 @@ const PortfolioManagement = dynamic(() => import('@/components/admin/PortfolioMa
 const TestimonialsManagement = dynamic(() => import('@/components/admin/TestimonialsManagement').then(mod => ({ default: mod.TestimonialsManagement })))
 const CareersManagement = dynamic(() => import('@/components/admin/CareersManagement').then(mod => ({ default: mod.CareersManagement })))
 const MediaManagement = dynamic(() => import('@/components/admin/MediaManagement').then(mod => ({ default: mod.MediaManagement })))
-const Analytics = dynamic(() => import('@/components/admin/Analytics').then(mod => ({ default: mod.Analytics })))
 const Settings = dynamic(() => import('@/components/admin/Settings').then(mod => ({ default: mod.Settings })))
 import { type Project, type Testimonial, type Career, projectsApi, testimonialsApi, careersApi } from '@/lib/api'
 import toast from 'react-hot-toast'
 import Swal from 'sweetalert2'
+import { showSuccessToast } from '@/lib/utils'
 
 export default function AdminLayoutClient() {
   const { user } = useAuth()
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'portfolio' | 'testimonials' | 'careers' | 'media' | 'analytics' | 'settings'>('dashboard')
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'portfolio' | 'testimonials' | 'careers' | 'media' | 'settings'>('dashboard')
   const [searchTerm, setSearchTerm] = useState('')
   const [isDataLoading, setIsDataLoading] = useState(true)
   const [dataError, setDataError] = useState<string | null>(null)
@@ -63,7 +63,7 @@ export default function AdminLayoutClient() {
       color: string
     }>
   })
-  const [analyticsLoading, setAnalyticsLoading] = useState(false)
+  const [analyticsLoading] = useState(false)
 
   // Settings states
   const [settings, setSettings] = useState({
@@ -171,8 +171,8 @@ export default function AdminLayoutClient() {
 
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#', '')
-      if (hash && ['dashboard', 'portfolio', 'testimonials', 'careers', 'media', 'analytics', 'settings'].includes(hash)) {
-        setActiveTab(hash as 'dashboard' | 'portfolio' | 'testimonials' | 'careers' | 'media' | 'analytics' | 'settings')
+      if (hash && ['dashboard', 'portfolio', 'testimonials', 'careers', 'media', 'settings'].includes(hash)) {
+        setActiveTab(hash as 'dashboard' | 'portfolio' | 'testimonials' | 'careers' | 'media' | 'settings')
       }
     }
 
@@ -198,11 +198,9 @@ export default function AdminLayoutClient() {
   const fetchData = useCallback(async (forceRefresh = false) => {
     if (!isClient) return
     
-    console.log('🔄 fetchData called with forceRefresh:', forceRefresh)
     
     // Clear cache if force refresh
     if (forceRefresh) {
-      console.log('🗑️ Clearing cache for force refresh')
       localStorage.removeItem('admin-cache')
       localStorage.removeItem('admin-cache-time')
     }
@@ -236,16 +234,6 @@ export default function AdminLayoutClient() {
     setDataError(null)
     
     try {
-      const token = localStorage.getItem('admin-token')
-      console.log('🔑 Admin token present:', !!token)
-      
-      const headers = {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` })
-      }
-      
-      console.log('📡 Headers being sent:', headers)
-      
       // Use direct backend calls (GET endpoints don't require authentication)
       const [portfoliosRes, testimonialsRes, careersRes] = await Promise.all([
         fetch('https://nextcoderapi.vercel.app/portfolios', { 
@@ -286,17 +274,10 @@ export default function AdminLayoutClient() {
       }
 
       // Set the real data from Vercel API
-      console.log('📊 Setting data from API:', {
-        projects: data.projects?.length || 0,
-        testimonials: data.testimonials?.length || 0,
-        careers: data.careers?.length || 0
-      })
       setProjects(data.projects)
       setTestimonials(data.testimonials)
       setCareers(data.careers)
       setLastRefresh(new Date())
-      console.log('✅ Data state updated successfully')
-      console.log('📊 Data loaded - projects:', data.projects?.length, 'testimonials:', data.testimonials?.length, 'careers:', data.careers?.length)
       
       // Cache the data
       localStorage.setItem('admin-cache', JSON.stringify(data))
@@ -318,7 +299,6 @@ export default function AdminLayoutClient() {
         },
       })
     } finally {
-      console.log('🔄 Setting isLoading to false')
       setIsDataLoading(false)
     }
   }, [isClient])
@@ -449,7 +429,6 @@ export default function AdminLayoutClient() {
     // Save to localStorage only
     if (isClient) {
       localStorage.setItem('admin-settings', JSON.stringify(newSettings))
-      console.log('Settings saved to localStorage')
     }
   }
 
@@ -471,24 +450,10 @@ export default function AdminLayoutClient() {
       // Save to localStorage only
       if (isClient) {
         localStorage.setItem('admin-settings', JSON.stringify(settings))
-        console.log(`Successfully saved ${section} settings to localStorage`)
       }
       
       // Show success alert
-      toast.success(`${section.charAt(0).toUpperCase() + section.slice(1)} settings saved successfully!`, {
-        duration: 3000,
-        position: 'bottom-right',
-        style: {
-          background: document.documentElement.classList.contains('dark') 
-            ? 'rgba(9, 222, 66,0.3)' 
-            : '#09de42',
-          color: '#fff',
-          borderRadius: '8px',
-          padding: '12px 16px',
-          fontSize: '14px',
-          fontWeight: '500',
-        },
-      })
+      showSuccessToast(`${section.charAt(0).toUpperCase() + section.slice(1)} settings saved successfully!`)
     } catch (error) {
       console.error('Error saving settings:', error)
       
@@ -568,20 +533,7 @@ export default function AdminLayoutClient() {
         localStorage.setItem('admin-settings', JSON.stringify(importedSettings))
       }
       
-      toast.success('Settings imported successfully!', {
-        duration: 3000,
-        position: 'bottom-right',
-        style: {
-          background: document.documentElement.classList.contains('dark') 
-            ? 'rgba(9, 222, 66,0.3)' 
-            : '#09de42',
-          color: '#fff',
-          borderRadius: '8px',
-          padding: '12px 16px',
-          fontSize: '14px',
-          fontWeight: '500',
-        },
-      })
+      showSuccessToast('Settings imported successfully!')
     } catch (error) {
       console.error('Error importing settings:', error)
       toast.error('Failed to import settings. Please check the file format.', {
@@ -686,20 +638,7 @@ export default function AdminLayoutClient() {
           localStorage.setItem('admin-settings', JSON.stringify(defaultSettings))
         }
         
-        toast.success('Settings have been reset to default values.', {
-          duration: 3000,
-          position: 'bottom-right',
-          style: {
-            background: document.documentElement.classList.contains('dark') 
-              ? 'rgba(9, 222, 66,0.3)' 
-              : '#09de42',
-            color: '#fff',
-            borderRadius: '8px',
-            padding: '12px 16px',
-            fontSize: '14px',
-            fontWeight: '500',
-          },
-        })
+        showSuccessToast('Settings have been reset to default values.')
       } catch (error) {
         console.error('Error resetting settings:', error)
         toast.error('Failed to reset settings.', {
@@ -740,7 +679,6 @@ export default function AdminLayoutClient() {
 
     if (result.isConfirmed) {
       try {
-        console.log(`🗑️ Deleting ${type} with ID:`, id)
         
         // Optimistically update UI first
         if (type === 'portfolio') {
@@ -754,17 +692,11 @@ export default function AdminLayoutClient() {
         // Use the appropriate API function and wait for completion
         let deleteResult
         if (type === 'portfolio') {
-          console.log('🚀 Starting portfolio deletion...')
           deleteResult = await projectsApi.delete(id)
-          console.log('✅ Portfolio deleted from database:', deleteResult)
         } else if (type === 'testimonial') {
-          console.log('🚀 Starting testimonial deletion...')
           deleteResult = await testimonialsApi.delete(id)
-          console.log('✅ Testimonial deleted from database:', deleteResult)
         } else if (type === 'career') {
-          console.log('🚀 Starting career deletion...')
           deleteResult = await careersApi.delete(id)
-          console.log('✅ Career deleted from database:', deleteResult)
         }
 
         // Check if deletion was successful
@@ -778,24 +710,9 @@ export default function AdminLayoutClient() {
         setLastRefresh(new Date())
 
         // Refresh data to ensure consistency
-        console.log('🔄 Refreshing data after deletion...')
         await fetchData(true)
-        console.log('✅ Data refreshed successfully')
 
-        toast.success(`The ${type} has been deleted successfully.`, {
-          duration: 3000,
-          position: 'bottom-right',
-          style: {
-            background: document.documentElement.classList.contains('dark') 
-              ? 'rgba(9, 250, 66,0.8)' 
-              : '#09de42',
-            color: '#fff',
-            borderRadius: '8px',
-            padding: '12px 16px',
-            fontSize: '14px',
-            fontWeight: '500',
-          },
-        })
+        showSuccessToast(`The ${type} has been deleted successfully.`)
       } catch (error) {
         console.error(`❌ Error deleting ${type}:`, error)
         const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
@@ -904,7 +821,6 @@ export default function AdminLayoutClient() {
                 {activeTab === 'testimonials' && 'Testimonials Management'}
                 {activeTab === 'careers' && 'Careers Management'}
                 {activeTab === 'media' && 'Media Management'}
-                {activeTab === 'analytics' && 'Analytics'}
                 {activeTab === 'settings' && 'Settings'}
               </h1>
               {lastRefresh && (
@@ -949,7 +865,6 @@ export default function AdminLayoutClient() {
             {/* Portfolio Management */}
             {activeTab === 'portfolio' && (
               <>
-                {console.log('🎨 Rendering PortfolioManagement with isLoading:', isDataLoading, 'projects:', projects.length)}
                 <PortfolioManagement
                   projects={projects}
                   searchTerm={searchTerm}
@@ -994,32 +909,12 @@ export default function AdminLayoutClient() {
             {/* Media Management */}
             {activeTab === 'media' && (
               <MediaManagement
-                onUploadSuccess={(url) => {
-                  console.log('New media uploaded:', url)
+                onUploadSuccess={() => {
                   // You can add logic here to refresh media list or update state
                 }}
               />
             )}
 
-            {/* Analytics Dashboard */}
-            {activeTab === 'analytics' && (
-              <Analytics
-                projects={projects}
-                testimonials={testimonials}
-                careers={careers}
-                analyticsData={analyticsData}
-                analyticsLoading={analyticsLoading}
-                lastRefresh={lastRefresh}
-                isDataLoading={isDataLoading}
-                onRefresh={() => {
-                      setAnalyticsLoading(true)
-                  fetchData().finally(() => setAnalyticsLoading(false))
-                }}
-                onTabChange={(tab) => {
-                  window.location.hash = `#${tab}`
-                }}
-              />
-            )}
 
             {/* Settings */}
             {activeTab === 'settings' && (

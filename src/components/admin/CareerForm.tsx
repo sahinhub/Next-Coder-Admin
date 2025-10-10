@@ -30,6 +30,7 @@ import { X, Save, Plus, Image as ImageIcon } from 'lucide-react'
 import { MediaPicker } from '@/components/ui/MediaPicker'
 import { type MediaItem } from '@/lib/cloudinaryApi'
 import { careersApi, type Career } from '@/lib/api'
+import { showSuccessToast } from '@/lib/utils'
 
 const formSchema = z.object({
   title: z.string().min(1, 'Job title is required'),
@@ -89,7 +90,7 @@ export function CareerForm({ onClose, job, isEdit = false, onSuccess }: CareerFo
   const handleMediaSelect = (media: MediaItem) => {
     form.setValue('image', media.url)
     setShowMediaPicker(false)
-    toast.success(`Selected ${media.filename} from media library`)
+    showSuccessToast(`Selected ${media.filename} from media library`)
   }
 
   const form = useForm<FormData>({
@@ -161,7 +162,6 @@ export function CareerForm({ onClose, job, isEdit = false, onSuccess }: CareerFo
     if (savedDraft && !isEdit) {
       try {
         const draftData = JSON.parse(savedDraft)
-        console.log('Loading career draft:', draftData)
         
         form.reset({
           title: draftData.title || '',
@@ -225,10 +225,6 @@ export function CareerForm({ onClose, job, isEdit = false, onSuccess }: CareerFo
   }
 
   const onSubmit = async (data: FormData) => {
-    console.log('🚀 CareerForm onSubmit called with data:', data)
-    console.log('🔍 isEdit:', isEdit)
-    console.log('🔍 job:', job)
-    console.log('🔍 job._id:', job && '_id' in job ? job._id : 'No _id')
     
     setIsLoading(true)
     try {
@@ -247,39 +243,22 @@ export function CareerForm({ onClose, job, isEdit = false, onSuccess }: CareerFo
         status: data.status as 'draft' | 'active' | 'paused' | 'closed', // Use form status value
       }
 
-      console.log('📝 Prepared careerData:', careerData)
 
       let result
       
       if (isEdit && job && '_id' in job && job._id) {
-        console.log('🔄 Updating career with ID:', job._id)
         result = await careersApi.update(job._id as string, careerData)
       } else {
-        console.log('➕ Creating new career')
         result = await careersApi.create(careerData)
       }
       
-      console.log(`Successfully ${isEdit ? 'updated' : 'created'} career:`, result)
       
       // Clear draft on successful submission
       if (!isEdit) {
         localStorage.removeItem('career-draft')
       }
       
-      toast.success(`Job posting ${isEdit ? 'updated' : 'created'} successfully!`, {
-        duration: 3000,
-        position: 'bottom-right',
-        style: {
-          background: document.documentElement.classList.contains('dark') 
-            ? 'rgba(9, 222, 66,0.3)' 
-            : '#09de42',
-          color: '#fff',
-          borderRadius: '8px',
-          padding: '12px 16px',
-          fontSize: '14px',
-          fontWeight: '500',
-        },
-      })
+      showSuccessToast(`Job posting ${isEdit ? 'updated' : 'created'} successfully!`)
       
       // Success - refresh data and close form
       onSuccess?.(result as Career)
@@ -336,7 +315,6 @@ export function CareerForm({ onClose, job, isEdit = false, onSuccess }: CareerFo
           <CardContent className="flex-1 overflow-y-auto p-6">
           <Form {...form}>
             <form onSubmit={(e) => {
-              console.log('📝 Form submit event triggered')
               form.handleSubmit(onSubmit)(e)
             }} className="space-y-6">
               {/* Basic Information */}

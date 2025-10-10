@@ -26,6 +26,7 @@ import { X, Plus, Save, Image as ImageIcon } from 'lucide-react'
 import { type ImageUploadResponse } from '@/lib/imageUpload'
 import { projectsApi, type Project } from '@/lib/api'
 import { type MediaItem } from '@/lib/cloudinaryApi'
+import { showSuccessToast } from '@/lib/utils'
 
 const formSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -297,7 +298,7 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
         console.error('Error loading draft:', error)
       }
     }
-  }, [form, isEdit])
+  }, [isEdit, form])
 
   const addTechnology = () => {
     if (newTech.trim() && !technologies.includes(newTech.trim())) {
@@ -352,20 +353,7 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
       setUploadedImages(prev => [...prev, result.data!.url])
       form.setValue('thumbnail', result.data!.url)
       setHasSelectedThumbnail(true)
-      toast.success('Image uploaded successfully!', {
-        duration: 3000,
-        position: 'bottom-right',
-        style: {
-          background: document.documentElement.classList.contains('dark') 
-            ? 'rgba(9, 222, 66,0.3)' 
-            : '#09de42',
-          color: '#fff',
-          borderRadius: '8px',
-          padding: '12px 16px',
-          fontSize: '14px',
-          fontWeight: '500',
-        },
-      })
+      showSuccessToast('Image uploaded successfully!')
     }
   }
 
@@ -375,20 +363,7 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
       const currentGallery = form.getValues('images') || []
       form.setValue('images', [...currentGallery, result.data!.url])
       setHasSelectedGallery(true)
-      toast.success('Gallery image uploaded successfully!', {
-        duration: 3000,
-        position: 'bottom-right',
-        style: {
-          background: document.documentElement.classList.contains('dark') 
-            ? 'rgba(9, 222, 66,0.3)' 
-            : '#09de42',
-          color: '#fff',
-          borderRadius: '8px',
-          padding: '12px 16px',
-          fontSize: '14px',
-          fontWeight: '500',
-        },
-      })
+      showSuccessToast('Gallery image uploaded successfully!')
     }
   }
 
@@ -397,20 +372,7 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
       setClientAvatar(result.data!.url)
       form.setValue('client.image', result.data!.url)
       setHasSelectedClientAvatar(true)
-      toast.success('Client avatar uploaded successfully!', {
-        duration: 3000,
-        position: 'bottom-right',
-        style: {
-          background: document.documentElement.classList.contains('dark') 
-            ? 'rgba(9, 222, 66,0.3)' 
-            : '#09de42',
-          color: '#fff',
-          borderRadius: '8px',
-          padding: '12px 16px',
-          fontSize: '14px',
-          fontWeight: '500',
-        },
-      })
+      showSuccessToast('Client avatar uploaded successfully!')
     }
   }
 
@@ -442,33 +404,29 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
       setUploadedImages([selectedMedia.url])
       form.setValue('thumbnail', selectedMedia.url)
       setHasSelectedThumbnail(true)
-      toast.success(`Selected ${selectedMedia.filename} from media library`)
+      showSuccessToast(`Selected ${selectedMedia.filename} from media library`)
     } else if (mediaPickerTarget === 'gallery') {
       const newUrls = mediaArray.map(m => m.url)
       setGalleryImages(prev => [...prev, ...newUrls])
       const currentImages = form.getValues('images') || []
       form.setValue('images', [...currentImages, ...newUrls])
       setHasSelectedGallery(true)
-      toast.success(`Selected ${mediaArray.length} image${mediaArray.length > 1 ? 's' : ''} from media library`)
+      showSuccessToast(`Selected ${mediaArray.length} image${mediaArray.length > 1 ? 's' : ''} from media library`)
     } else if (mediaPickerTarget === 'client') {
       const selectedMedia = mediaArray[0]
       setClientAvatar(selectedMedia.url)
       const currentClient = form.getValues('client') || { name: '', designation: '', testimonial: '', image: '' }
       form.setValue('client', { ...currentClient, image: selectedMedia.url })
       setHasSelectedClientAvatar(true)
-      toast.success(`Selected ${selectedMedia.filename} from media library`)
+      showSuccessToast(`Selected ${selectedMedia.filename} from media library`)
     }
     setShowMediaPicker(false)
   }
 
   const onSubmit = async (data: FormData) => {
-    console.log('🚀 Form submission started with data:', data)
-    console.log('📊 Form validation state:', form.formState)
-    console.log('❌ Form errors:', form.formState.errors)
     
     // Check if form is valid before proceeding
     if (!form.formState.isValid) {
-      console.log('❌ Form is not valid, triggering validation')
       form.trigger() // Trigger validation to show errors
       return
     }
@@ -519,26 +477,11 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
       let result
       if (isEdit && portfolio && '_id' in portfolio && portfolio._id) {
         result = await projectsApi.update(portfolio._id, portfolioData)
-        console.log('✅ Portfolio updated successfully:', result)
       } else {
         result = await projectsApi.create(portfolioData)
-        console.log('✅ Portfolio created successfully:', result)
       }
       
-      toast.success(`Portfolio ${isEdit ? 'updated' : 'created'} successfully!`, {
-        duration: 3000,
-        position: 'bottom-right',
-        style: {
-          background: document.documentElement.classList.contains('dark') 
-            ? 'rgba(9, 222, 66,0.3)' 
-            : '#09de42',
-          color: '#fff',
-          borderRadius: '8px',
-          padding: '12px 16px',
-          fontSize: '14px',
-          fontWeight: '500',
-        },
-      })
+      showSuccessToast(`Portfolio ${isEdit ? 'updated' : 'created'} successfully!`)
       
       // Clear draft on successful submission
       localStorage.removeItem('portfolio-draft')

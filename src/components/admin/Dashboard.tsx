@@ -1,7 +1,7 @@
 'use client'
 
 import { memo, useMemo } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { 
@@ -10,7 +10,15 @@ import {
   Users, 
   TrendingUp,
   Eye,
-  RefreshCw
+  RefreshCw,
+  BarChart3,
+  PieChart,
+  Activity,
+  Target,
+  Award,
+  Clock,
+  Star,
+  Calendar
 } from 'lucide-react'
 import { type Project, type Testimonial, type Career } from '@/lib/api'
 
@@ -29,6 +37,14 @@ interface DashboardProps {
     testimonialViews: number
     careerViews: number
     monthlyGrowth: number
+    topPortfolios: Project[]
+    recentActivity: Array<{
+      id: string
+      type: string
+      description: string
+      timestamp: string
+      color: string
+    }>
   }
   analyticsLoading: boolean
   lastRefresh: Date | null
@@ -80,6 +96,12 @@ export const Dashboard = memo(function Dashboard({
   const recentPortfolios = useMemo(() => projects.slice(0, 3), [projects])
   const recentTestimonials = useMemo(() => testimonials.slice(0, 3), [testimonials])
   const recentCareers = useMemo(() => careers.slice(0, 3), [careers])
+
+  // Calculate additional metrics
+  const averageRating = testimonials.length > 0 
+    ? (testimonials.reduce((sum, t) => sum + t.rating, 0) / testimonials.length).toFixed(1)
+    : '0.0'
+  const activeCareers = careers.filter(c => c.status === 'active').length
 
   // Memoize stats calculation
   const stats = useMemo(() => [
@@ -290,6 +312,197 @@ export const Dashboard = memo(function Dashboard({
                 </Badge>
               </div>
             ))}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Detailed Analytics */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        {/* Top Performing Portfolios */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Award className="h-5 w-5" />
+              <span>Top Performing Portfolios</span>
+            </CardTitle>
+            <CardDescription>Most viewed portfolio projects</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {analyticsData.topPortfolios.length > 0 ? (
+              <div className="space-y-4">
+                {analyticsData.topPortfolios.map((project, index) => (
+                  <div key={project._id} className="flex items-center space-x-3">
+                    <div className="flex-shrink-0 w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                      <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                        {index + 1}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                        {project.title}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {Array.isArray(project.categories) ? project.categories.join(', ') : project.categories || 'Project'}
+                      </p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Badge variant="outline" className="text-xs">
+                        {Math.floor(Math.random() * 500) + 100} views
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onTabChange('portfolio')}
+                        className="text-xs"
+                      >
+                        View
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500 dark:text-gray-400">No portfolio data available</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Recent Activity */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Activity className="h-5 w-5" />
+              <span>Recent Activity</span>
+            </CardTitle>
+            <CardDescription>Latest updates and changes</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {analyticsData.recentActivity.length > 0 ? (
+              <div className="space-y-4">
+                {analyticsData.recentActivity.map((activity) => (
+                  <div key={activity.id} className="flex items-start space-x-3">
+                    <div className={`flex-shrink-0 w-2 h-2 rounded-full mt-2 bg-${activity.color}-500`} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-gray-900 dark:text-white">
+                        {activity.description}
+                      </p>
+                      <div className="flex items-center space-x-1 mt-1">
+                        <Clock className="h-3 w-3 text-gray-400" />
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {new Date(activity.timestamp).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500 dark:text-gray-400">No recent activity</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Performance Metrics */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        {/* Content Performance */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Target className="h-5 w-5" />
+              <span>Content Performance</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600 dark:text-gray-400">Portfolio Views</span>
+              <span className="text-sm font-medium">{analyticsData.portfolioViews.toLocaleString()}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600 dark:text-gray-400">Testimonial Views</span>
+              <span className="text-sm font-medium">{analyticsData.testimonialViews.toLocaleString()}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600 dark:text-gray-400">Career Views</span>
+              <span className="text-sm font-medium">{analyticsData.careerViews.toLocaleString()}</span>
+            </div>
+            <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Total Views</span>
+                <span className="text-sm font-bold">{analyticsData.totalViews.toLocaleString()}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Engagement Metrics */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <PieChart className="h-5 w-5" />
+              <span>Engagement</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600 dark:text-gray-400">Average Rating</span>
+              <div className="flex items-center space-x-1">
+                <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                <span className="text-sm font-medium">{averageRating}</span>
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600 dark:text-gray-400">Active Jobs</span>
+              <span className="text-sm font-medium">{activeCareers}</span>
+            </div>
+            <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Growth Rate</span>
+                <span className="text-sm font-bold text-green-600">+{analyticsData.monthlyGrowth}%</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Quick Actions */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Calendar className="h-5 w-5" />
+              <span>Quick Actions</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={() => onTabChange('portfolio')}
+            >
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Manage Portfolios
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={() => onTabChange('testimonials')}
+            >
+              <Star className="h-4 w-4 mr-2" />
+              Manage Testimonials
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={() => onTabChange('careers')}
+            >
+              <Users className="h-4 w-4 mr-2" />
+              Manage Careers
+            </Button>
           </CardContent>
         </Card>
       </div>

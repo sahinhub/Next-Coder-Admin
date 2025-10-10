@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/form'
 import { X, Save, Star, Calendar, Info, Image as ImageIcon } from 'lucide-react'
 import { testimonialsApi, type Testimonial } from '@/lib/api'
+import { showSuccessToast } from '@/lib/utils'
 
 const formSchema = z.object({
   name: z.string().min(1, 'Client name is required'),
@@ -79,7 +80,7 @@ export function TestimonialForm({ onClose, testimonial, isEdit = false, onSucces
     setClientImage(selectedMedia.url)
     form.setValue('clientImage', selectedMedia.url)
     setShowMediaPicker(false)
-    toast.success(`Selected ${selectedMedia.filename} from media library`)
+    showSuccessToast(`Selected ${selectedMedia.filename} from media library`)
   }
 
   const form = useForm<FormData>({
@@ -205,20 +206,7 @@ export function TestimonialForm({ onClose, testimonial, isEdit = false, onSucces
         localStorage.removeItem('testimonial-draft')
       }
 
-      toast.success(`Testimonial ${isEdit ? 'updated' : 'created'} successfully!`, {
-        duration: 3000,
-        position: 'bottom-right',
-        style: {
-          background: document.documentElement.classList.contains('dark') 
-            ? 'rgba(9, 222, 66,0.3)' 
-            : '#09de42',
-          color: '#fff',
-          borderRadius: '8px',
-          padding: '12px 16px',
-          fontSize: '14px',
-          fontWeight: '500',
-        },
-      })
+      showSuccessToast(`Testimonial ${isEdit ? 'updated' : 'created'} successfully!`)
 
       // Success - refresh data and close form
       onSuccess?.(result as Testimonial)
@@ -270,20 +258,7 @@ export function TestimonialForm({ onClose, testimonial, isEdit = false, onSucces
     if (result.data?.url) {
       setClientImage(result.data!.url)
       form.setValue('clientImage', result.data!.url)
-      toast.success('Client image uploaded successfully!', {
-        duration: 3000,
-        position: 'bottom-right',
-        style: {
-          background: document.documentElement.classList.contains('dark') 
-            ? 'rgba(9, 222, 66,0.3)' 
-            : '#09de42',
-          color: '#fff',
-          borderRadius: '8px',
-          padding: '12px 16px',
-          fontSize: '14px',
-          fontWeight: '500',
-        },
-      })
+      showSuccessToast('Client image uploaded successfully!')
     }
   }
 

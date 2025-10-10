@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Eye, EyeOff, Loader2, Lock, Mail, User } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { showSuccessToast } from '@/lib/utils'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -67,20 +68,7 @@ export default function LoginPage() {
         localStorage.setItem('admin-token', data.token)
         localStorage.setItem('admin-user', JSON.stringify(data.user))
         
-        toast.success(`Welcome back, ${data.user.username}!`, {
-          duration: 3000,
-          position: 'bottom-right',
-          style: {
-            background: document.documentElement.classList.contains('dark') 
-              ? 'rgba(9, 222, 66,0.3)' 
-              : '#09de42',
-            color: '#fff',
-            borderRadius: '8px',
-            padding: '12px 16px',
-            fontSize: '14px',
-            fontWeight: '500',
-          },
-        })
+        showSuccessToast(`Welcome back, ${data.user.username}!`)
         
         router.push('/admin')
       } else {
@@ -176,20 +164,7 @@ export default function LoginPage() {
         localStorage.setItem('admin-token', data.token)
         localStorage.setItem('admin-user', JSON.stringify(data.user))
         
-        toast.success(`Welcome, ${data.user.username}! Your admin account has been created.`, {
-          duration: 4000,
-          position: 'bottom-right',
-          style: {
-            background: document.documentElement.classList.contains('dark') 
-              ? 'rgba(9, 222, 66,0.3)' 
-              : '#09de42',
-            color: '#fff',
-            borderRadius: '8px',
-            padding: '12px 16px',
-            fontSize: '14px',
-            fontWeight: '500',
-          },
-        })
+        showSuccessToast(`Welcome, ${data.user.username}! Your admin account has been created.`, 4000)
         
         router.push('/admin')
       } else {

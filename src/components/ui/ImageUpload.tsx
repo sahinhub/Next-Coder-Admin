@@ -21,6 +21,7 @@ interface ImageUploadProps {
   description?: string
   supportText?: string
   maxSize?: number // in bytes
+  showPreview?: boolean // whether to show preview after upload
 }
 
 
@@ -34,7 +35,8 @@ export function ImageUpload({
   title = 'Upload Project Thumbnail',
   description = 'Drag and drop your thumbnail here, or click to browse',
   supportText = 'Supports: JPG, PNG, WebP (max 32MB) for thumbnail',
-  maxSize = 32 * 1024 * 1024 // 32MB default
+  maxSize = 32 * 1024 * 1024, // 32MB default
+  showPreview = true
 }: ImageUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [dragActive, setDragActive] = useState(false)
@@ -203,7 +205,7 @@ export function ImageUpload({
       )}
 
       {/* Preview - Simplified for better LCP */}
-      {previewUrls.length > 0 && (
+      {showPreview && previewUrls.length > 0 && (
         <div className="space-y-2">
           <h4 className="text-sm font-medium text-gray-900 dark:text-white">Preview:</h4>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
