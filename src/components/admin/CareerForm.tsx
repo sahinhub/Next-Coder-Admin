@@ -225,6 +225,11 @@ export function CareerForm({ onClose, job, isEdit = false, onSuccess }: CareerFo
   }
 
   const onSubmit = async (data: FormData) => {
+    console.log('🚀 CareerForm onSubmit called with data:', data)
+    console.log('🔍 isEdit:', isEdit)
+    console.log('🔍 job:', job)
+    console.log('🔍 job._id:', job && '_id' in job ? job._id : 'No _id')
+    
     setIsLoading(true)
     try {
       // Prepare data for MongoDB structure
@@ -242,11 +247,15 @@ export function CareerForm({ onClose, job, isEdit = false, onSuccess }: CareerFo
         status: data.status as 'draft' | 'active' | 'paused' | 'closed', // Use form status value
       }
 
+      console.log('📝 Prepared careerData:', careerData)
+
       let result
       
       if (isEdit && job && '_id' in job && job._id) {
+        console.log('🔄 Updating career with ID:', job._id)
         result = await careersApi.update(job._id as string, careerData)
       } else {
+        console.log('➕ Creating new career')
         result = await careersApi.create(careerData)
       }
       
@@ -326,7 +335,10 @@ export function CareerForm({ onClose, job, isEdit = false, onSuccess }: CareerFo
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto p-6">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={(e) => {
+              console.log('📝 Form submit event triggered')
+              form.handleSubmit(onSubmit)(e)
+            }} className="space-y-6">
               {/* Basic Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
