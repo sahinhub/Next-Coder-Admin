@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/select'
 import { X, Save, Plus, Image as ImageIcon } from 'lucide-react'
 import { MediaPicker } from '@/components/ui/MediaPicker'
+import { DatePicker } from '@/components/ui/date-picker'
 import { type MediaItem } from '@/lib/cloudinaryApi'
 import { careersApi, type Career } from '@/lib/api'
 import { showSuccessToast } from '@/lib/utils'
@@ -419,7 +420,11 @@ export function CareerForm({ onClose, job, isEdit = false, onSuccess }: CareerFo
                     <FormItem>
                       <FormLabel>Application Deadline</FormLabel>
                       <FormControl>
-                        <Input type="date" {...field} />
+                        <DatePicker
+                          value={field.value ? new Date(field.value) : undefined}
+                          onChange={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                          placeholder="Select deadline"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -432,7 +437,11 @@ export function CareerForm({ onClose, job, isEdit = false, onSuccess }: CareerFo
                     <FormItem>
                       <FormLabel>Posted Date</FormLabel>
                       <FormControl>
-                        <Input type="date" {...field} />
+                        <DatePicker
+                          value={field.value ? new Date(field.value) : undefined}
+                          onChange={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                          placeholder="Select posted date"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

@@ -22,6 +22,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { ImageUpload } from '@/components/ui/ImageUpload'
 import { MediaPicker } from '@/components/ui/MediaPicker'
+import { DatePicker } from '@/components/ui/date-picker'
 import { X, Plus, Save, Image as ImageIcon } from 'lucide-react'
 import { type ImageUploadResponse } from '@/lib/imageUpload'
 import { projectsApi, type Project } from '@/lib/api'
@@ -880,9 +881,10 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
                     <FormItem>
                       <FormLabel>Publish Date</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="date" 
-                          {...field} 
+                        <DatePicker
+                          value={field.value ? new Date(field.value) : undefined}
+                          onChange={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                          placeholder="Select publish date"
                         />
                       </FormControl>
                       <FormMessage />

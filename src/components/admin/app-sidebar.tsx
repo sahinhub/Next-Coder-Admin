@@ -32,7 +32,6 @@ const navigation = [
   { name: "Testimonials", icon: MessageSquare, href: "#testimonials" },
   { name: "Careers", icon: Users, href: "#careers" },
   { name: "Media", icon: ImageIcon, href: "#media" },
-  { name: "Analytics", icon: BarChart3, href: "#analytics" },
   { name: "Settings", icon: Settings, href: "#settings" },
 ]
 

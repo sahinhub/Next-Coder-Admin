@@ -1,11 +1,11 @@
 'use client'
 
 import { useState, useMemo, useCallback, useEffect } from 'react'
-import Image from 'next/image'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
+import { SafeImage } from '@/components/ui/safe-image'
 import { 
   Search, 
   Plus, 
@@ -240,7 +240,7 @@ export function PortfolioManagement({
                           <div className="flex items-center">
                             <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
                               {portfolio.thumbnail ? (
-                                <Image 
+                                <SafeImage 
                                   src={portfolio.thumbnail} 
                                   alt={portfolio.title}
                                   width={64}
@@ -331,7 +331,7 @@ export function PortfolioManagement({
                     <div className="flex items-start space-x-4">
                       <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0">
                         {portfolio.thumbnail ? (
-                          <Image 
+                          <SafeImage 
                             src={portfolio.thumbnail} 
                             alt={portfolio.title}
                             width={64}

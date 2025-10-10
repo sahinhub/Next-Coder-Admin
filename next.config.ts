@@ -118,6 +118,9 @@ const nextConfig: NextConfig = {
     minimumCacheTTL: 60,
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    // Add error handling for missing images
+    unoptimized: false,
+    loader: 'default',
   },
   
   // Bundle optimization
