@@ -236,50 +236,45 @@ export default function AdminLayoutClient() {
     
     try {
       const token = localStorage.getItem('admin-token')
+      console.log('🔑 Admin token present:', !!token)
+      
       const headers = {
         'Content-Type': 'application/json',
         ...(token && { 'Authorization': `Bearer ${token}` })
       }
       
-      // Fetch data directly from backend API (more reliable in production)
-      const API_BASE_URL = 'https://nextcoderapi.vercel.app'
+      console.log('📡 Headers being sent:', headers)
       
+      // Use direct backend calls (GET endpoints don't require authentication)
       const [portfoliosRes, testimonialsRes, careersRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/portfolios`, { 
-          headers,
-          cache: 'no-cache' // Disable cache for now to ensure fresh data
+        fetch('https://nextcoderapi.vercel.app/portfolios', { 
+          cache: 'no-cache'
         }).then(async res => {
           if (!res.ok) throw new Error(`Portfolios API error: ${res.status}`)
-          try {
-            return await res.json()
-          } catch (parseError) {
-            console.error('Error parsing portfolios JSON:', parseError)
-            return []
-          }
+          return await res.json()
+        }).catch(error => {
+          console.error('Portfolios API error:', error)
+          return []
         }),
-        fetch(`${API_BASE_URL}/testimonials`, { 
-          headers,
+        
+        fetch('https://nextcoderapi.vercel.app/testimonials', { 
           cache: 'no-cache'
         }).then(async res => {
           if (!res.ok) throw new Error(`Testimonials API error: ${res.status}`)
-          try {
-            return await res.json()
-          } catch (parseError) {
-            console.error('Error parsing testimonials JSON:', parseError)
-            return []
-          }
+          return await res.json()
+        }).catch(error => {
+          console.error('Testimonials API error:', error)
+          return []
         }),
-        fetch(`${API_BASE_URL}/careers`, { 
-          headers,
+        
+        fetch('https://nextcoderapi.vercel.app/careers', { 
           cache: 'no-cache'
         }).then(async res => {
           if (!res.ok) throw new Error(`Careers API error: ${res.status}`)
-          try {
-            return await res.json()
-          } catch (parseError) {
-            console.error('Error parsing careers JSON:', parseError)
-            return []
-          }
+          return await res.json()
+        }).catch(error => {
+          console.error('Careers API error:', error)
+          return []
         })
       ])
 
