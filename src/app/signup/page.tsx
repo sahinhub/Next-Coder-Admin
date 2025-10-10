@@ -99,7 +99,7 @@ export default function SignUpPage() {
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
                 <FormField
                   control={form.control}
                   name="name"
@@ -143,7 +143,7 @@ export default function SignUpPage() {
                   )}
                 />
                 
-                <FormField
+                <FormField 
                   control={form.control}
                   name="password"
                   render={({ field }) => (
@@ -179,7 +179,7 @@ export default function SignUpPage() {
                     <FormItem className='space-y-2'>
                       <FormLabel className="text-white/90">Confirm Password</FormLabel>
                       <FormControl>
-                        <div className="relative">
+                        <div className="relative ">
                           <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/60 w-4 h-4" />
                           <Input
                             type={showConfirmPassword ? 'text' : 'password'}
