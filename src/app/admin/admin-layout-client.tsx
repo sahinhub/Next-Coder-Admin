@@ -241,12 +241,13 @@ export default function AdminLayoutClient() {
         ...(token && { 'Authorization': `Bearer ${token}` })
       }
       
-      // Fetch data with optimized caching using local API routes
+      // Fetch data directly from backend API (more reliable in production)
+      const API_BASE_URL = 'https://nextcoderapi.vercel.app'
+      
       const [portfoliosRes, testimonialsRes, careersRes] = await Promise.all([
-        fetch('/api/portfolios', { 
+        fetch(`${API_BASE_URL}/portfolios`, { 
           headers,
-          cache: 'force-cache',
-          next: { revalidate: 300 } // 5 minutes
+          cache: 'no-cache' // Disable cache for now to ensure fresh data
         }).then(async res => {
           if (!res.ok) throw new Error(`Portfolios API error: ${res.status}`)
           try {
@@ -256,10 +257,9 @@ export default function AdminLayoutClient() {
             return []
           }
         }),
-        fetch('/api/testimonials', { 
+        fetch(`${API_BASE_URL}/testimonials`, { 
           headers,
-          cache: 'force-cache',
-          next: { revalidate: 300 }
+          cache: 'no-cache'
         }).then(async res => {
           if (!res.ok) throw new Error(`Testimonials API error: ${res.status}`)
           try {
@@ -269,10 +269,9 @@ export default function AdminLayoutClient() {
             return []
           }
         }),
-        fetch('/api/careers', { 
+        fetch(`${API_BASE_URL}/careers`, { 
           headers,
-          cache: 'force-cache',
-          next: { revalidate: 300 }
+          cache: 'no-cache'
         }).then(async res => {
           if (!res.ok) throw new Error(`Careers API error: ${res.status}`)
           try {

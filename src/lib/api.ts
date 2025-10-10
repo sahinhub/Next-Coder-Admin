@@ -28,7 +28,8 @@ export const projectsApi = {
       headers: {
         'Content-Type': 'application/json',
         ...(token && { 'Authorization': `Bearer ${token}` })
-      }
+      },
+      cache: 'no-cache' // Ensure fresh data
     })
 
     if (!response.ok) {
@@ -40,7 +41,9 @@ export const projectsApi = {
 
   // Get featured projects
   async getFeatured(limit = 6) {
-    const response = await fetch(`${API_BASE_URL}/portfolios`)
+    const response = await fetch(`${API_BASE_URL}/portfolios`, {
+      cache: 'no-cache'
+    })
 
     if (!response.ok) {
       throw new Error(`Failed to fetch featured projects: ${response.statusText}`)
