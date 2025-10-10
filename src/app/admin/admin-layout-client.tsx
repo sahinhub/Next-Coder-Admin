@@ -27,7 +27,7 @@ export default function AdminLayoutClient() {
   const { user } = useAuth()
   const [activeTab, setActiveTab] = useState<'dashboard' | 'portfolio' | 'testimonials' | 'careers' | 'media' | 'analytics' | 'settings'>('dashboard')
   const [searchTerm, setSearchTerm] = useState('')
-  const [isDataLoading, setIsDataLoading] = useState(false)
+  const [isDataLoading, setIsDataLoading] = useState(true)
   const [dataError, setDataError] = useState<string | null>(null)
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
   const [isClient, setIsClient] = useState(false)
@@ -223,6 +223,7 @@ export default function AdminLayoutClient() {
             setTestimonials(parsed.testimonials || [])
             setCareers(parsed.careers || [])
             setLastRefresh(new Date(parseInt(cacheTime)))
+            setIsDataLoading(false) // Ensure loading state is cleared when using cache
             return
           } catch {
             console.warn('Cache parse error, fetching fresh data')
@@ -295,6 +296,7 @@ export default function AdminLayoutClient() {
       setCareers(data.careers)
       setLastRefresh(new Date())
       console.log('✅ Data state updated successfully')
+      console.log('📊 Data loaded - projects:', data.projects?.length, 'testimonials:', data.testimonials?.length, 'careers:', data.careers?.length)
       
       // Cache the data
       localStorage.setItem('admin-cache', JSON.stringify(data))
@@ -316,6 +318,7 @@ export default function AdminLayoutClient() {
         },
       })
     } finally {
+      console.log('🔄 Setting isLoading to false')
       setIsDataLoading(false)
     }
   }, [isClient])
@@ -945,18 +948,21 @@ export default function AdminLayoutClient() {
 
             {/* Portfolio Management */}
             {activeTab === 'portfolio' && (
-              <PortfolioManagement
-                projects={projects}
-                searchTerm={searchTerm}
-                onSearchChange={setSearchTerm}
-                onAddPortfolio={() => { 
-                  setEditingItem(null); 
-                  setShowPortfolioForm(true); 
-                }}
-                onEditPortfolio={(portfolio) => handleEdit(portfolio as unknown as Record<string, unknown>, 'portfolio')}
-                onDeletePortfolio={(id) => handleDelete(id, 'portfolio')}
-                isLoading={isDataLoading}
-              />
+              <>
+                {console.log('🎨 Rendering PortfolioManagement with isLoading:', isDataLoading, 'projects:', projects.length)}
+                <PortfolioManagement
+                  projects={projects}
+                  searchTerm={searchTerm}
+                  onSearchChange={setSearchTerm}
+                  onAddPortfolio={() => { 
+                    setEditingItem(null); 
+                    setShowPortfolioForm(true); 
+                  }}
+                  onEditPortfolio={(portfolio) => handleEdit(portfolio as unknown as Record<string, unknown>, 'portfolio')}
+                  onDeletePortfolio={(id) => handleDelete(id, 'portfolio')}
+                  isLoading={isDataLoading}
+                />
+              </>
             )}
 
             {/* Testimonials Management */}
