@@ -8,7 +8,6 @@ import {
   Briefcase,
   MessageSquare,
   Users,
-  BarChart3,
   Settings,
   User,
   ChevronUp,
@@ -124,91 +123,145 @@ export function AppSidebar({ collapsed = false, }: AppSidebarProps) {
         
       </div>
 
-      {/* Footer */}
-      <div className={`mt-auto border-t border-gray-200 dark:border-gray-700 ${collapsed ? 'p-2' : 'p-4'}`} >
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              className={`w-full h-auto p-2 hover:bg-gray-100 dark:hover:bg-gray-700 ${
-                collapsed ? 'justify-center' : 'justify-start gap-3'
-              }`}
-              title={collapsed ? `${user?.username || 'Admin User'}` : undefined}
-            >
-              <div className="flex flex-shrink-0 h-10 w-10 items-center justify-center rounded-full bg-purple-100 dark:bg-green-900">
-                <User className="h-6 w-6 text-green-600 dark:text-purple-400" />
-              </div>
-              {!collapsed && (
-                <>
-                  <div className="flex-1 text-left">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">{user?.username || 'Admin User'}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email || 'admin@wenextcoder.com'}</p>
-                    {user?.lastLogin && (
-                      <p className="text-xs text-gray-400 dark:text-gray-500">
-                        Last login: {new Date(user.lastLogin).toLocaleDateString()}
+      {/* Enhanced Footer */}
+      <div className={`mt-auto border-t border-gray-200 dark:border-gray-700 ${collapsed ? 'p-2' : 'p-4'}`}>
+        {/* User Profile Section */}
+        <div className="mb-3">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                className={`w-full h-auto p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 ${
+                  collapsed ? 'justify-center' : 'justify-start gap-3'
+                }`}
+                title={collapsed ? `${user?.username || 'Admin User'}` : undefined}
+              >
+                <div className="flex flex-shrink-0 h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-blue-600 dark:from-green-500 dark:to-blue-600 shadow-lg">
+                  <User className="h-6 w-6 text-white" />
+                </div>
+                {!collapsed && (
+                  <>
+                    <div className="flex-1 text-left min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                        {user?.username || 'Admin User'}
                       </p>
-                    )}
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        {user?.email || 'admin@wenextcoder.com'}
+                      </p>
+                      <div className="flex items-center gap-1 mt-1">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span className="text-xs text-green-600 dark:text-green-400 font-medium">Online</span>
+                      </div>
+                    </div>
+                    <ChevronUp className="h-4 w-4 text-gray-400" />
+                  </>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              className="w-64 p-2"
+              side="top"
+              align="end"
+              sideOffset={8}
+            >
+              {/* User Info Header */}
+              <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 mb-2">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center">
+                    <User className="h-5 w-5 text-white" />
                   </div>
-                  <ChevronUp className="h-4 w-4" />
-                </>
-              )}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            className="w-56"
-            side="top"
-            align="end"
-            sideOffset={4}
-          >
-            <DropdownMenuItem 
-              className="gap-2"
-              onClick={() => {
-                window.location.href = '/admin/account'
-              }}
-            >
-              <User className="h-4 w-4" />
-              <span>Account</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              className="gap-2"
-              onClick={() => {
-                window.location.hash = '#settings'
-              }}
-            >
-              <Settings className="h-4 w-4" />
-              <span>Settings</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="gap-2 text-red-600 dark:text-red-400 "
-              onClick={async () => {
-                const result = await Swal.fire({
-                  title: 'Logout?',
-                  text: 'Are you sure you want to logout?',
-                  icon: 'question',
-                  showCancelButton: true,
-                  confirmButtonColor: '#ef4444',
-                  cancelButtonColor: '#6b7280',
-                  confirmButtonText: 'Yes, logout',
-                  cancelButtonText: 'Cancel',
-                  customClass: {
-                    popup: 'dark:bg-gray-800 dark:text-white',
-                    title: 'dark:text-white',
-                    htmlContainer: 'dark:text-gray-300',
-                    confirmButton: 'bg-red-600 hover:bg-red-700 text-white',
-                    cancelButton: 'bg-gray-500 hover:bg-gray-600 text-white'
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                      {user?.username || 'Admin User'}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                      {user?.email || 'admin@wenextcoder.com'}
+                    </p>
+                  </div>
+                </div>
+                {user?.lastLogin && (
+                  <div className="mt-2 text-xs text-gray-400 dark:text-gray-500">
+                    Last login: {new Date(user.lastLogin).toLocaleDateString()}
+                  </div>
+                )}
+              </div>
+
+              {/* Menu Items */}
+              <DropdownMenuItem 
+                className="gap-3 px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
+                onClick={() => {
+                  window.location.href = '/admin/account'
+                }}
+              >
+                <User className="h-4 w-4 text-gray-500" />
+                <div className="flex-1">
+                  <span className="text-sm font-medium">Account Settings</span>
+                  <p className="text-xs text-gray-500">Manage your profile</p>
+                </div>
+              </DropdownMenuItem>
+              
+              <DropdownMenuItem 
+                className="gap-3 px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
+                onClick={() => {
+                  window.location.hash = '#settings'
+                }}
+              >
+                <Settings className="h-4 w-4 text-gray-500" />
+                <div className="flex-1">
+                  <span className="text-sm font-medium">Preferences</span>
+                  <p className="text-xs text-gray-500">Customize your experience</p>
+                </div>
+              </DropdownMenuItem>
+
+              <div className="border-t border-gray-200 dark:border-gray-700 my-2"></div>
+              
+              <DropdownMenuItem
+                className="gap-3 px-3 py-2 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400"
+                onClick={async () => {
+                  const result = await Swal.fire({
+                    title: 'Logout?',
+                    text: 'Are you sure you want to logout?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#ef4444',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'Yes, logout',
+                    cancelButtonText: 'Cancel',
+                    customClass: {
+                      popup: 'dark:bg-gray-800 dark:text-white',
+                      title: 'dark:text-white',
+                      htmlContainer: 'dark:text-gray-300',
+                      confirmButton: 'bg-red-600 hover:bg-red-700 text-white',
+                      cancelButton: 'bg-gray-500 hover:bg-gray-600 text-white'
+                    }
+                  })
+                  
+                  if (result.isConfirmed) {
+                    await logout()
                   }
-                })
-                
-                if (result.isConfirmed) {
-                  await logout()
-                }
-              }}
-            >
-              <LogOut className="h-4 w-4" />
-              <span>Sign out</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+                }}
+              >
+                <LogOut className="h-4 w-4" />
+                <div className="flex-1">
+                  <span className="text-sm font-medium">Sign out</span>
+                  <p className="text-xs text-red-500 dark:text-red-400">End your session</p>
+                </div>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        {/* App Version & Status */}
+        {!collapsed && (
+          <div className="text-center">
+            <div className="text-xs text-gray-400 dark:text-gray-500 mb-1">
+              We Next Coder Admin
+            </div>
+            <div className="text-xs text-gray-300 dark:text-gray-600">
+              v1.0.0 • All systems operational
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

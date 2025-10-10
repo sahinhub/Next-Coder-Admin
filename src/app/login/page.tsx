@@ -237,7 +237,7 @@ export default function LoginPage() {
           <CardContent>
             {isRegistering ? (
               <form onSubmit={handleRegister} className="space-y-4">
-                <div >
+                <div className='space-y-2' >
                   <Label htmlFor="username">Username</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -253,7 +253,7 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                <div>
+                <div className='space-y-2'>
                   <Label htmlFor="email">Email</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -269,7 +269,7 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                <div>
+                <div className='space-y-2'>
                   <Label htmlFor="password">Password</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -292,7 +292,7 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                <div>
+                <div className='space-y-2' >
                   <Label htmlFor="confirmPassword">Confirm Password</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
