@@ -24,7 +24,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { X, Save, Star, Calendar, Info, Image as ImageIcon } from 'lucide-react'
-import { testimonialsApi } from '@/lib/api'
+import { testimonialsApi, type Testimonial } from '@/lib/api'
 
 const formSchema = z.object({
   name: z.string().min(1, 'Client name is required'),
@@ -40,7 +40,7 @@ interface TestimonialFormProps {
   onClose: () => void
   testimonial?: FormData | (Record<string, unknown> & { _id?: string })
   isEdit?: boolean
-  onSuccess?: () => void
+  onSuccess?: (newItem?: Testimonial) => void
 }
 
 export function TestimonialForm({ onClose, testimonial, isEdit = false, onSuccess }: TestimonialFormProps) {
@@ -205,15 +205,39 @@ export function TestimonialForm({ onClose, testimonial, isEdit = false, onSucces
         localStorage.removeItem('testimonial-draft')
       }
 
-      toast.success(`Testimonial ${isEdit ? 'updated' : 'created'} successfully!`)
+      toast.success(`Testimonial ${isEdit ? 'updated' : 'created'} successfully!`, {
+        duration: 3000,
+        position: 'bottom-right',
+        style: {
+          background: document.documentElement.classList.contains('dark') 
+            ? 'rgba(9, 222, 66,0.3)' 
+            : '#09de42',
+          color: '#fff',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          fontSize: '14px',
+          fontWeight: '500',
+        },
+      })
 
       // Success - refresh data and close form
-      onSuccess?.()
+      onSuccess?.(result as Testimonial)
       handleClose()
     } catch (error) {
       console.error('Error saving testimonial:', error)
       const errorMessage = error instanceof Error ? error.message : 'Failed to save testimonial. Please try again.'
-      toast.error(errorMessage)
+      toast.error(errorMessage, {
+        duration: 5000,
+        position: 'bottom-right',
+        style: {
+          background: '#ef4444',
+          color: '#fff',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          fontSize: '14px',
+          fontWeight: '500',
+        },
+      })
     } finally {
       setIsLoading(false)
     }

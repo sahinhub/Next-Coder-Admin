@@ -7,10 +7,14 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const queryString = searchParams.toString()
     
+    // Get authorization header from request
+    const authHeader = request.headers.get('authorization')
+    
     const response = await fetch(`${API_BASE_URL}/testimonials?${queryString}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        ...(authHeader && { 'Authorization': authHeader }),
       },
     })
 
@@ -36,10 +40,14 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     
+    // Get authorization header from request
+    const authHeader = request.headers.get('authorization')
+    
     const response = await fetch(`${API_BASE_URL}/testimonials`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...(authHeader && { 'Authorization': authHeader }),
       },
       body: JSON.stringify(body),
     })

@@ -373,8 +373,10 @@ export class CloudinarySyncService {
    * Start automatic sync with Cloudinary
    */
   startAutoSync(intervalMinutes: number = 5, onUpdate?: (media: MediaItem[]) => void) {
+    // Prevent multiple instances
     if (this.syncInterval) {
-      this.stopAutoSync()
+      console.log('Cloudinary auto-sync already running, skipping start')
+      return
     }
 
     this.onUpdateCallback = onUpdate || null

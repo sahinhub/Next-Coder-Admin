@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
-import { RefreshCw, Sidebar } from 'lucide-react'
+import { Sidebar } from 'lucide-react'
 import { AppSidebar } from '@/components/admin/app-sidebar'
 import dynamic from 'next/dynamic'
 
@@ -198,6 +198,15 @@ export default function AdminLayoutClient() {
   const fetchData = useCallback(async (forceRefresh = false) => {
     if (!isClient) return
     
+    console.log('🔄 fetchData called with forceRefresh:', forceRefresh)
+    
+    // Clear cache if force refresh
+    if (forceRefresh) {
+      console.log('🗑️ Clearing cache for force refresh')
+      localStorage.removeItem('admin-cache')
+      localStorage.removeItem('admin-cache-time')
+    }
+    
     // Check cache first (unless force refresh)
     if (!forceRefresh) {
       const cachedData = localStorage.getItem('admin-cache')
@@ -205,7 +214,7 @@ export default function AdminLayoutClient() {
       
       if (cachedData && cacheTime) {
         const cacheAge = Date.now() - parseInt(cacheTime)
-        const CACHE_DURATION = 10 * 60 * 1000 // 10 minutes for better performance
+        const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes for better data freshness
         
         if (cacheAge < CACHE_DURATION) {
           try {
@@ -282,10 +291,16 @@ export default function AdminLayoutClient() {
       }
 
       // Set the real data from Vercel API
+      console.log('📊 Setting data from API:', {
+        projects: data.projects?.length || 0,
+        testimonials: data.testimonials?.length || 0,
+        careers: data.careers?.length || 0
+      })
       setProjects(data.projects)
       setTestimonials(data.testimonials)
       setCareers(data.careers)
       setLastRefresh(new Date())
+      console.log('✅ Data state updated successfully')
       
       // Cache the data
       localStorage.setItem('admin-cache', JSON.stringify(data))
@@ -310,6 +325,28 @@ export default function AdminLayoutClient() {
       setIsDataLoading(false)
     }
   }, [isClient])
+
+  // Helper function to add new item optimistically
+  const addItemOptimistically = useCallback((item: Project | Testimonial | Career, type: 'portfolio' | 'testimonial' | 'career') => {
+    if (type === 'portfolio') {
+      setProjects(prev => [item as Project, ...prev])
+    } else if (type === 'testimonial') {
+      setTestimonials(prev => [item as Testimonial, ...prev])
+    } else if (type === 'career') {
+      setCareers(prev => [item as Career, ...prev])
+    }
+  }, [])
+
+  // Helper function to update item optimistically
+  const updateItemOptimistically = useCallback((item: Project | Testimonial | Career, type: 'portfolio' | 'testimonial' | 'career') => {
+    if (type === 'portfolio') {
+      setProjects(prev => prev.map(p => p._id === item._id ? item as Project : p))
+    } else if (type === 'testimonial') {
+      setTestimonials(prev => prev.map(t => t._id === item._id ? item as Testimonial : t))
+    } else if (type === 'career') {
+      setCareers(prev => prev.map(c => c._id === item._id ? item as Career : c))
+    }
+  }, [])
 
   // Load data on mount with immediate loading state
   useEffect(() => {
@@ -706,24 +743,54 @@ export default function AdminLayoutClient() {
 
     if (result.isConfirmed) {
       try {
-        // Use the appropriate API function
+        console.log(`🗑️ Deleting ${type} with ID:`, id)
+        
+        // Optimistically update UI first
         if (type === 'portfolio') {
-          await projectsApi.delete(id)
           setProjects(prev => prev.filter(p => p._id !== id))
         } else if (type === 'testimonial') {
-          await testimonialsApi.delete(id)
           setTestimonials(prev => prev.filter(t => t._id !== id))
         } else if (type === 'career') {
-          await careersApi.delete(id)
           setCareers(prev => prev.filter(c => c._id !== id))
         }
+        
+        // Use the appropriate API function and wait for completion
+        let deleteResult
+        if (type === 'portfolio') {
+          console.log('🚀 Starting portfolio deletion...')
+          deleteResult = await projectsApi.delete(id)
+          console.log('✅ Portfolio deleted from database:', deleteResult)
+        } else if (type === 'testimonial') {
+          console.log('🚀 Starting testimonial deletion...')
+          deleteResult = await testimonialsApi.delete(id)
+          console.log('✅ Testimonial deleted from database:', deleteResult)
+        } else if (type === 'career') {
+          console.log('🚀 Starting career deletion...')
+          deleteResult = await careersApi.delete(id)
+          console.log('✅ Career deleted from database:', deleteResult)
+        }
+
+        // Check if deletion was successful
+        if (!deleteResult || (!deleteResult.acknowledged && deleteResult.deletedCount === 0)) {
+          // Revert optimistic update if deletion failed
+          await fetchData(true)
+          throw new Error(`Failed to delete ${type} from database`)
+        }
+
+        // Update last refresh time to show the change
+        setLastRefresh(new Date())
+
+        // Refresh data to ensure consistency
+        console.log('🔄 Refreshing data after deletion...')
+        await fetchData(true)
+        console.log('✅ Data refreshed successfully')
 
         toast.success(`The ${type} has been deleted successfully.`, {
           duration: 3000,
           position: 'bottom-right',
           style: {
             background: document.documentElement.classList.contains('dark') 
-              ? 'rgba(9, 222, 66,0.3)' 
+              ? 'rgba(9, 250, 66,0.8)' 
               : '#09de42',
             color: '#fff',
             borderRadius: '8px',
@@ -733,9 +800,14 @@ export default function AdminLayoutClient() {
           },
         })
       } catch (error) {
-        console.error(`Error deleting ${type}:`, error)
-        toast.error(`Failed to delete ${type}. Please try again.`, {
-          duration: 4000,
+        console.error(`❌ Error deleting ${type}:`, error)
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+        
+        // Revert optimistic update on error
+        await fetchData(true)
+        
+        toast.error(`Failed to delete ${type}: ${errorMessage}`, {
+          duration: 5000,
           position: 'bottom-right',
           style: {
             background: '#ef4444',
@@ -844,29 +916,11 @@ export default function AdminLayoutClient() {
                 </span>
               )}
             </div>
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => fetchData(true)}
-                disabled={isDataLoading}
-                className="flex items-center space-x-2"
-              >
-                <RefreshCw className={`w-4 h-4 ${isDataLoading ? 'animate-spin' : ''}`} />
-                <span>Refresh</span>
-              </Button>
-            </div>
           </div>
         </header>
 
         {/* Content Area */}
         <div className="flex-1 overflow-auto p-6">
-          {/* Loading Indicator */}
-          {isDataLoading && (
-            <div className="fixed top-4 right-4 z-50 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg">
-              Loading...
-            </div>
-          )}
           
           {/* Error Display */}
           {dataError && (
@@ -907,6 +961,7 @@ export default function AdminLayoutClient() {
                 }}
                 onEditPortfolio={(portfolio) => handleEdit(portfolio as unknown as Record<string, unknown>, 'portfolio')}
                 onDeletePortfolio={(id) => handleDelete(id, 'portfolio')}
+                isLoading={isDataLoading}
               />
             )}
 
@@ -919,6 +974,7 @@ export default function AdminLayoutClient() {
                 onAddTestimonial={() => { setEditingItem(null); setShowTestimonialForm(true); }}
                 onEditTestimonial={(testimonial) => handleEdit(testimonial as unknown as Record<string, unknown>, 'testimonial')}
                 onDeleteTestimonial={(id) => handleDelete(id, 'testimonial')}
+                isLoading={isDataLoading}
               />
             )}
 
@@ -931,6 +987,7 @@ export default function AdminLayoutClient() {
                 onAddCareer={() => { setEditingItem(null); setShowCareerForm(true); }}
                 onEditCareer={(career) => handleEdit(career as unknown as Record<string, unknown>, 'career')}
                 onDeleteCareer={(id) => handleDelete(id, 'career')}
+                isLoading={isDataLoading}
               />
             )}
 
@@ -990,10 +1047,24 @@ export default function AdminLayoutClient() {
           }}
           portfolio={editingItem || undefined}
           isEdit={!!editingItem}
-          onSuccess={() => {
+          onSuccess={async (newItem?: Project) => {
             setShowPortfolioForm(false)
             setEditingItem(null)
-            fetchData()
+            setLastRefresh(new Date())
+            
+            // Optimistically update UI if we have the new item
+            if (newItem) {
+              if (editingItem) {
+                updateItemOptimistically(newItem, 'portfolio')
+              } else {
+                addItemOptimistically(newItem, 'portfolio')
+              }
+            }
+            
+            // Force refresh data to ensure consistency
+            await fetchData(true)
+            // Update analytics after data refresh
+            calculateAnalytics()
           }}
         />
       )}
@@ -1006,10 +1077,24 @@ export default function AdminLayoutClient() {
           }}
           testimonial={editingItem || undefined}
           isEdit={!!editingItem}
-          onSuccess={() => {
+          onSuccess={async (newItem?: Testimonial) => {
             setShowTestimonialForm(false)
             setEditingItem(null)
-            fetchData()
+            setLastRefresh(new Date())
+            
+            // Optimistically update UI if we have the new item
+            if (newItem) {
+              if (editingItem) {
+                updateItemOptimistically(newItem, 'testimonial')
+              } else {
+                addItemOptimistically(newItem, 'testimonial')
+              }
+            }
+            
+            // Force refresh data to ensure consistency
+            await fetchData(true)
+            // Update analytics after data refresh
+            calculateAnalytics()
           }}
         />
       )}
@@ -1022,10 +1107,24 @@ export default function AdminLayoutClient() {
           }}
           job={editingItem || undefined}
           isEdit={!!editingItem}
-          onSuccess={() => {
+          onSuccess={async (newItem?: Career) => {
             setShowCareerForm(false)
             setEditingItem(null)
-            fetchData()
+            setLastRefresh(new Date())
+            
+            // Optimistically update UI if we have the new item
+            if (newItem) {
+              if (editingItem) {
+                updateItemOptimistically(newItem, 'career')
+              } else {
+                addItemOptimistically(newItem, 'career')
+              }
+            }
+            
+            // Force refresh data to ensure consistency
+            await fetchData(true)
+            // Update analytics after data refresh
+            calculateAnalytics()
           }}
         />
       )}

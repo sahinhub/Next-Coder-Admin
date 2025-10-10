@@ -29,7 +29,7 @@ import {
 import { X, Save, Plus, Image as ImageIcon } from 'lucide-react'
 import { MediaPicker } from '@/components/ui/MediaPicker'
 import { type MediaItem } from '@/lib/cloudinaryApi'
-import { careersApi } from '@/lib/api'
+import { careersApi, type Career } from '@/lib/api'
 
 const formSchema = z.object({
   title: z.string().min(1, 'Job title is required'),
@@ -52,7 +52,7 @@ interface CareerFormProps {
   onClose: () => void
   job?: FormData | (Record<string, unknown> & { _id?: string })
   isEdit?: boolean
-  onSuccess?: () => void
+  onSuccess?: (newItem?: Career) => void
 }
 
 export function CareerForm({ onClose, job, isEdit = false, onSuccess }: CareerFormProps) {
@@ -257,15 +257,39 @@ export function CareerForm({ onClose, job, isEdit = false, onSuccess }: CareerFo
         localStorage.removeItem('career-draft')
       }
       
-      toast.success(`Job posting ${isEdit ? 'updated' : 'created'} successfully!`)
+      toast.success(`Job posting ${isEdit ? 'updated' : 'created'} successfully!`, {
+        duration: 3000,
+        position: 'bottom-right',
+        style: {
+          background: document.documentElement.classList.contains('dark') 
+            ? 'rgba(9, 222, 66,0.3)' 
+            : '#09de42',
+          color: '#fff',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          fontSize: '14px',
+          fontWeight: '500',
+        },
+      })
       
       // Success - refresh data and close form
-      onSuccess?.()
+      onSuccess?.(result as Career)
       onClose()
     } catch (error) {
       console.error('Error saving career:', error)
       const errorMessage = error instanceof Error ? error.message : 'Failed to save job posting. Please try again.'
-      toast.error(errorMessage)
+      toast.error(errorMessage, {
+        duration: 5000,
+        position: 'bottom-right',
+        style: {
+          background: '#ef4444',
+          color: '#fff',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          fontSize: '14px',
+          fontWeight: '500',
+        },
+      })
     } finally {
       setIsLoading(false)
     }

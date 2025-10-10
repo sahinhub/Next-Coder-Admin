@@ -101,6 +101,11 @@ export const projectsApi = {
   // Update project
   async update(id: string, data: Record<string, unknown>) {
     const token = localStorage.getItem('admin-token')
+    
+    console.log('🚀 Updating project with ID:', id)
+    console.log('📝 Update data:', data)
+    console.log('🔑 Using token:', token ? 'Present' : 'Missing')
+    
     const response = await fetch(`${API_BASE_URL}/portfolio/update/${id}`, {
       method: 'PUT',
       headers: {
@@ -110,16 +115,33 @@ export const projectsApi = {
       body: JSON.stringify(data),
     })
 
+    console.log('📡 API Response status:', response.status)
+    console.log('📡 API Response headers:', Object.fromEntries(response.headers.entries()))
+
     if (!response.ok) {
-      throw new Error(`Failed to update project: ${response.statusText}`)
+      let errorMessage = `Failed to update project: ${response.statusText}`
+      try {
+        const errorData = await response.json()
+        console.error('❌ API Error response:', errorData)
+        errorMessage = errorData.error || errorData.message || errorMessage
+      } catch (parseError) {
+        console.error('❌ Could not parse error response:', parseError)
+      }
+      throw new Error(errorMessage)
     }
 
-    return response.json()
+    const result = await response.json()
+    console.log('✅ Project updated successfully:', result)
+    return result
   },
 
   // Delete project
   async delete(id: string) {
     const token = localStorage.getItem('admin-token')
+    
+    console.log('🚀 Deleting portfolio with ID:', id)
+    console.log('🔑 Using token:', token ? 'Present' : 'Missing')
+    
     const response = await fetch(`${API_BASE_URL}/portfolio/delete/${id}`, {
       method: 'DELETE',
       headers: {
@@ -128,11 +150,29 @@ export const projectsApi = {
       },
     })
 
+    console.log('📡 API Response status:', response.status)
+    console.log('📡 API Response headers:', Object.fromEntries(response.headers.entries()))
+
     if (!response.ok) {
-      throw new Error(`Failed to delete project: ${response.statusText}`)
+      let errorMessage = `Failed to delete portfolio: ${response.statusText}`
+      try {
+        const errorData = await response.json()
+        console.error('❌ API Error response:', errorData)
+        errorMessage = errorData.error || errorData.message || errorMessage
+      } catch (parseError) {
+        console.error('❌ Could not parse error response:', parseError)
+      }
+      throw new Error(errorMessage)
     }
 
-    return response.json()
+    const result = await response.json()
+    console.log('✅ Portfolio deleted successfully:', result)
+    console.log('📊 Delete result details:', {
+      acknowledged: result.acknowledged,
+      deletedCount: result.deletedCount,
+      success: result.acknowledged && result.deletedCount > 0
+    })
+    return result
   }
 }
 
@@ -281,6 +321,11 @@ export const testimonialsApi = {
 
     const result = await response.json()
     console.log('✅ Testimonial deleted successfully:', result)
+    console.log('📊 Delete result details:', {
+      acknowledged: result.acknowledged,
+      deletedCount: result.deletedCount,
+      success: result.acknowledged && result.deletedCount > 0
+    })
     return result
   }
 }
@@ -443,6 +488,11 @@ export const careersApi = {
 
     const result = await response.json()
     console.log('✅ Career deleted successfully:', result)
+    console.log('📊 Delete result details:', {
+      acknowledged: result.acknowledged,
+      deletedCount: result.deletedCount,
+      success: result.acknowledged && result.deletedCount > 0
+    })
     return result
   },
 

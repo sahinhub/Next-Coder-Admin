@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Search, Plus, Edit, Trash2, MapPin, Clock, Users, Building, Calendar } from 'lucide-react'
 import { type Career } from '@/lib/api'
 
@@ -15,6 +16,7 @@ interface CareersManagementProps {
   onAddCareer: () => void
   onEditCareer: (career: Career) => void
   onDeleteCareer: (id: string) => void
+  isLoading?: boolean
 }
 
 export function CareersManagement({
@@ -23,7 +25,8 @@ export function CareersManagement({
   onSearchChange,
   onAddCareer,
   onEditCareer,
-  onDeleteCareer
+  onDeleteCareer,
+  isLoading = false
 }: CareersManagementProps) {
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
@@ -47,6 +50,69 @@ export function CareersManagement({
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
+  }
+
+  // Loading skeleton component
+  const CareersSkeleton = () => (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {Array.from({ length: 4 }).map((_, index) => (
+        <Card key={index} className="hover:shadow-lg transition-shadow">
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <Skeleton className="h-6 w-3/4 mb-2" />
+                <div className="flex items-center space-x-2 mb-2">
+                  <Skeleton className="h-5 w-16" />
+                  <Skeleton className="h-5 w-12" />
+                </div>
+                <div className="flex items-center space-x-4">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-16" />
+                </div>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <Skeleton className="h-4 w-full mb-1" />
+            <Skeleton className="h-4 w-3/4 mb-4" />
+            <div className="mb-4">
+              <div className="flex flex-wrap gap-1">
+                <Skeleton className="h-5 w-12" />
+                <Skeleton className="h-5 w-16" />
+                <Skeleton className="h-5 w-14" />
+              </div>
+            </div>
+            <div className="flex items-center justify-between mb-4">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+            <div className="flex items-center justify-end space-x-2">
+              <Skeleton className="h-8 w-16" />
+              <Skeleton className="h-8 w-20" />
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  )
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <Skeleton className="h-8 w-80 mb-2" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+          <Skeleton className="h-10 w-36" />
+        </div>
+        <div className="flex items-center space-x-4">
+          <Skeleton className="h-10 w-64" />
+          <Skeleton className="h-4 w-32" />
+        </div>
+        <CareersSkeleton />
+      </div>
+    )
   }
 
   const getStatusColor = (status: string) => {

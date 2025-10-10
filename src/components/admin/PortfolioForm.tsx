@@ -24,7 +24,7 @@ import { ImageUpload } from '@/components/ui/ImageUpload'
 import { MediaPicker } from '@/components/ui/MediaPicker'
 import { X, Plus, Save, Image as ImageIcon } from 'lucide-react'
 import { type ImageUploadResponse } from '@/lib/imageUpload'
-import { projectsApi } from '@/lib/api'
+import { projectsApi, type Project } from '@/lib/api'
 import { type MediaItem } from '@/lib/cloudinaryApi'
 
 const formSchema = z.object({
@@ -43,6 +43,15 @@ const formSchema = z.object({
     testimonial: z.string().optional(),
     image: z.string().optional(),
   }).optional(),
+}).refine((data) => {
+  // Additional validation: ensure at least one image is provided
+  if (!data.thumbnail && (!data.images || data.images.length === 0)) {
+    return false
+  }
+  return true
+}, {
+  message: "At least one image (thumbnail or gallery) is required",
+  path: ["thumbnail"]
 })
 
 type FormData = z.infer<typeof formSchema>
@@ -78,7 +87,7 @@ interface PortfolioFormProps {
   onClose: () => void
   portfolio?: PortfolioData
   isEdit?: boolean
-  onSuccess?: () => void
+  onSuccess?: (newItem?: Project) => void
 }
 
 export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }: PortfolioFormProps) {
@@ -451,6 +460,13 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
     console.log('📊 Form validation state:', form.formState)
     console.log('❌ Form errors:', form.formState.errors)
     
+    // Check if form is valid before proceeding
+    if (!form.formState.isValid) {
+      console.log('❌ Form is not valid, triggering validation')
+      form.trigger() // Trigger validation to show errors
+      return
+    }
+    
     setIsLoading(true)
     try {
       
@@ -494,26 +510,52 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
         }
       }
       
+      let result
       if (isEdit && portfolio && '_id' in portfolio && portfolio._id) {
-        await projectsApi.update(portfolio._id, portfolioData)
+        result = await projectsApi.update(portfolio._id, portfolioData)
+        console.log('✅ Portfolio updated successfully:', result)
       } else {
-        await projectsApi.create(portfolioData)
+        result = await projectsApi.create(portfolioData)
+        console.log('✅ Portfolio created successfully:', result)
       }
       
-      
-      toast.success(`Portfolio ${isEdit ? 'updated' : 'created'} successfully!`)
+      toast.success(`Portfolio ${isEdit ? 'updated' : 'created'} successfully!`, {
+        duration: 3000,
+        position: 'bottom-right',
+        style: {
+          background: document.documentElement.classList.contains('dark') 
+            ? 'rgba(9, 222, 66,0.3)' 
+            : '#09de42',
+          color: '#fff',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          fontSize: '14px',
+          fontWeight: '500',
+        },
+      })
       
       // Clear draft on successful submission
       localStorage.removeItem('portfolio-draft')
       setIsDraft(false)
       
       // Success - refresh data and close form
-      onSuccess?.()
+      onSuccess?.(result as Project)
       handleClose()
     } catch (error) {
       console.error('Error saving portfolio:', error)
       const errorMessage = error instanceof Error ? error.message : 'Failed to save portfolio. Please try again.'
-      toast.error(errorMessage)
+      toast.error(errorMessage, {
+        duration: 5000,
+        position: 'bottom-right',
+        style: {
+          background: '#ef4444',
+          color: '#fff',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          fontSize: '14px',
+          fontWeight: '500',
+        },
+      })
     } finally {
       setIsLoading(false)
     }

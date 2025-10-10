@@ -301,30 +301,41 @@ export function MediaManagement({ onUploadSuccess }: MediaManagementProps) {
 
   // Load media on component mount
   useEffect(() => {
-    // Start with Cloudinary sync for all media
-    syncWithCloudinary()
+    let isMounted = true
     
-    // Enable auto-sync to keep all content updated
-    syncService.startAutoSync(30, (newMedia) => {
-      setMediaItems(prev => {
-        const existingIds = new Set(prev.map(item => item.id))
-        const newItems = newMedia.filter(item => !existingIds.has(item.id))
+    const initializeSync = async () => {
+      // Start with Cloudinary sync for all media
+      if (isMounted) {
+        await syncWithCloudinary()
         
-        if (newItems.length > 0) {
-          // Auto-sync: Silently added new media items
-        }
-        
-        // Preserve user's current state during auto-sync
-        return [...prev, ...newItems]
-      })
-      setLastSyncTime(new Date())
-    })
+        // Enable auto-sync to keep all content updated (only if not already running)
+        syncService.startAutoSync(30, (newMedia) => {
+          if (isMounted) {
+            setMediaItems(prev => {
+              const existingIds = new Set(prev.map(item => item.id))
+              const newItems = newMedia.filter(item => !existingIds.has(item.id))
+              
+              if (newItems.length > 0) {
+                // Auto-sync: Silently added new media items
+              }
+              
+              // Preserve user's current state during auto-sync
+              return [...prev, ...newItems]
+            })
+            setLastSyncTime(new Date())
+          }
+        })
+      }
+    }
+
+    initializeSync()
 
     // Cleanup on unmount
     return () => {
-      syncService.stopAutoSync()
+      isMounted = false
+      // Don't stop auto-sync on unmount as it's shared across components
     }
-  }, [syncService])
+  }, [syncService]) // Include syncService but prevent re-runs with the isMounted check
 
   const handleImageUpload = (result: ImageUploadResponse) => {
     if (result.data?.url) {

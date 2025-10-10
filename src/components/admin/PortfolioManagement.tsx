@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Skeleton } from '@/components/ui/skeleton'
 import { 
   Search, 
   Plus, 
@@ -24,6 +25,7 @@ interface PortfolioManagementProps {
   onAddPortfolio: () => void
   onEditPortfolio: (portfolio: Project) => void
   onDeletePortfolio: (id: string) => void
+  isLoading?: boolean
 }
 
 export function PortfolioManagement({
@@ -32,7 +34,8 @@ export function PortfolioManagement({
   onSearchChange,
   onAddPortfolio,
   onEditPortfolio,
-  onDeletePortfolio
+  onDeletePortfolio,
+  isLoading = false
 }: PortfolioManagementProps) {
   const [currentPage, setCurrentPage] = useState(1)
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm)
@@ -98,6 +101,73 @@ export function PortfolioManagement({
   const handleNextPage = useCallback(() => {
     setCurrentPage(prev => Math.min(prev + 1, totalPages))
   }, [totalPages])
+
+  // Loading skeleton component
+  const PortfolioSkeleton = () => (
+    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="bg-gray-50 dark:bg-gray-700 px-6 py-3 border-b border-gray-200 dark:border-gray-600">
+        <div className="grid grid-cols-6 gap-4">
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-4 w-16" />
+        </div>
+      </div>
+      <div className="divide-y divide-gray-200 dark:divide-gray-600">
+        {Array.from({ length: 5 }).map((_, index) => (
+          <div key={index} className="px-6 py-4">
+            <div className="grid grid-cols-6 gap-4 items-center">
+              <div className="col-span-2">
+                <div className="flex items-center">
+                  <Skeleton className="w-16 h-16 rounded-lg mr-4" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-48" />
+                  </div>
+                </div>
+              </div>
+              <div className="col-span-1">
+                <div className="flex flex-wrap gap-1">
+                  <Skeleton className="h-5 w-12" />
+                  <Skeleton className="h-5 w-16" />
+                </div>
+              </div>
+              <div className="col-span-1">
+                <Skeleton className="h-5 w-16" />
+              </div>
+              <div className="col-span-1">
+                <Skeleton className="h-4 w-20" />
+              </div>
+              <div className="col-span-1">
+                <Skeleton className="h-4 w-20" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <Skeleton className="h-8 w-80 mb-2" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+          <Skeleton className="h-10 w-36" />
+        </div>
+        <div className="flex items-center space-x-4">
+          <Skeleton className="h-10 w-64" />
+          <Skeleton className="h-10 w-20" />
+        </div>
+        <PortfolioSkeleton />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
