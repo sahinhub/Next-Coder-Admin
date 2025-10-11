@@ -172,7 +172,7 @@ export function AppSidebar({ collapsed = false, }: AppSidebarProps) {
               <DropdownMenuItem 
                 className="gap-3 px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-white group transition-colors duration-300 hover:cursor-pointer"
                 onClick={() => {
-                  window.location.href = '/admin/account'
+                  window.location.href = '/account'
                 }}
               >
                 <User className="h-4 w-4 text-gray-500 group-hover:text-white" />

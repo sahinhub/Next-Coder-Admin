@@ -99,7 +99,7 @@ const MediaPickerCard = memo(({
       }`}
       onClick={() => onSelect(item)}
     >
-      <CardContent className="p-0">
+      <CardContent className="p-0 rounded-lg">
         <div className="relative h-24 bg-gray-100 dark:bg-gray-800 rounded-t-lg">
           {item.type?.startsWith('image/') ? (
             <Image
@@ -476,7 +476,7 @@ export function MediaPicker({
                 </CardContent>
               </Card>
             ) : viewMode === 'grid' ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 justify-items-center">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 justify-items-center p-1">
                 {displayedMedia.map((item) => (
                   <MediaPickerCard
                     key={item.id}

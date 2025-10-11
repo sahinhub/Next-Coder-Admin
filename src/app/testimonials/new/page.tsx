@@ -10,11 +10,11 @@ export default function NewTestimonialPage() {
   const router = useRouter()
 
   const handleSuccess = () => {
-    router.push('/admin#testimonials')
+    router.push('/#testimonials')
   }
 
   const handleClose = () => {
-    router.push('/admin#testimonials')
+    router.push('/#testimonials')
   }
 
   return (

@@ -899,9 +899,6 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
                           </div>
                         </div>
                       </FormControl>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Date is automatically set to current date when creating a new portfolio
-                      </p>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -947,7 +944,7 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
                     <Badge key={tech} variant="secondary" className="flex items-center gap-1">
                       {tech}
                       <X 
-                        className="w-3 h-3 cursor-pointer" 
+                        className="w-3 h-3 cursor-pointer hover:text-red-500 transition-colors" 
                         onClick={() => removeTechnology(tech)}
                       />
                     </Badge>
@@ -974,7 +971,7 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
                     <Badge key={feature} variant="secondary" className="flex items-center gap-1">
                       {feature}
                       <X 
-                        className="w-3 h-3 cursor-pointer" 
+                        className="w-3 h-3 cursor-pointer hover:text-red-500 transition-colors" 
                         onClick={() => removeFeature(feature)}
                       />
                     </Badge>

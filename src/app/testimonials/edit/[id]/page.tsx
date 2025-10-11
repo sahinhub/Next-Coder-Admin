@@ -5,17 +5,17 @@ import { useRouter, useParams } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { CareerForm } from '@/components/admin/CareerForm'
+import { TestimonialForm } from '@/components/admin/TestimonialForm'
 import toast from 'react-hot-toast'
 
-export default function EditCareerPage() {
+export default function EditTestimonialPage() {
   const router = useRouter()
   const params = useParams()
-  const [career, setCareer] = useState(null)
+  const [testimonial, setTestimonial] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const fetchCareer = async () => {
+    const fetchTestimonial = async () => {
       try {
         const token = localStorage.getItem('admin-token')
         const headers = {
@@ -23,17 +23,17 @@ export default function EditCareerPage() {
           ...(token && { 'Authorization': `Bearer ${token}` })
         }
 
-        const response = await fetch(`https://nextcoderapi.vercel.app/careers/${params.id}`, { headers })
+        const response = await fetch(`https://nextcoderapi.vercel.app/testimonials/${params.id}`, { headers })
         
         if (!response.ok) {
-          throw new Error('Failed to fetch career')
+          throw new Error('Failed to fetch testimonial')
         }
 
         const data = await response.json()
-        setCareer(data)
+        setTestimonial(data)
       } catch (error) {
-        console.error('Error fetching career:', error)
-        toast.error('Failed to load job post details', {
+        console.error('Error fetching testimonial:', error)
+        toast.error('Failed to load testimonial details', {
           duration: 4000,
           position: 'bottom-right',
           style: {
@@ -45,23 +45,23 @@ export default function EditCareerPage() {
             fontWeight: '500',
           },
         })
-        router.push('/admin#careers')
+        router.push('/#testimonials')
       } finally {
         setLoading(false)
       }
     }
 
     if (params.id) {
-      fetchCareer()
+      fetchTestimonial()
     }
   }, [params.id, router])
 
   const handleSuccess = () => {
-    router.push('/admin#careers')
+    router.push('/#testimonials')
   }
 
   const handleClose = () => {
-    router.push('/admin#careers')
+    router.push('/#testimonials')
   }
 
   if (loading) {
@@ -77,11 +77,11 @@ export default function EditCareerPage() {
                 className="flex items-center gap-2 mb-6"
               >
                 <ArrowLeft className="h-4 w-4" />
-                Back to Careers
+                Back to Testimonials
               </Button>
               <div className="text-center">
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Edit Job Post</h1>
-                <p className="text-gray-600 dark:text-gray-400">Loading job post details...</p>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Edit Testimonial</h1>
+                <p className="text-gray-600 dark:text-gray-400">Loading testimonial details...</p>
               </div>
             </div>
             <Card className="shadow-lg">
@@ -110,21 +110,21 @@ export default function EditCareerPage() {
               className="flex items-center gap-2 mb-6"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back to Careers
+              Back to Testimonials
             </Button>
             <div className="text-center">
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Edit Job Post</h1>
-              <p className="text-gray-600 dark:text-gray-400">Update job post details</p>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Edit Testimonial</h1>
+              <p className="text-gray-600 dark:text-gray-400">Update testimonial details</p>
             </div>
           </div>
 
           {/* Form */}
           <Card className="shadow-lg">
             <CardContent className="p-6">
-              <CareerForm
+              <TestimonialForm
                 onClose={handleClose}
                 onSuccess={handleSuccess}
-                job={career || undefined}
+                testimonial={testimonial || undefined}
                 isEdit={true}
               />
             </CardContent>

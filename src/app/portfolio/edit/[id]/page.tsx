@@ -5,17 +5,17 @@ import { useRouter, useParams } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { TestimonialForm } from '@/components/admin/TestimonialForm'
+import { PortfolioForm } from '@/components/admin/PortfolioForm'
 import toast from 'react-hot-toast'
 
-export default function EditTestimonialPage() {
+export default function EditPortfolioPage() {
   const router = useRouter()
   const params = useParams()
-  const [testimonial, setTestimonial] = useState(null)
+  const [portfolio, setPortfolio] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const fetchTestimonial = async () => {
+    const fetchPortfolio = async () => {
       try {
         const token = localStorage.getItem('admin-token')
         const headers = {
@@ -23,17 +23,17 @@ export default function EditTestimonialPage() {
           ...(token && { 'Authorization': `Bearer ${token}` })
         }
 
-        const response = await fetch(`https://nextcoderapi.vercel.app/testimonials/${params.id}`, { headers })
+        const response = await fetch(`https://nextcoderapi.vercel.app/portfolios/${params.id}`, { headers })
         
         if (!response.ok) {
-          throw new Error('Failed to fetch testimonial')
+          throw new Error('Failed to fetch portfolio')
         }
 
         const data = await response.json()
-        setTestimonial(data)
+        setPortfolio(data)
       } catch (error) {
-        console.error('Error fetching testimonial:', error)
-        toast.error('Failed to load testimonial details', {
+        console.error('Error fetching portfolio:', error)
+        toast.error('Failed to load portfolio details', {
           duration: 4000,
           position: 'bottom-right',
           style: {
@@ -45,23 +45,23 @@ export default function EditTestimonialPage() {
             fontWeight: '500',
           },
         })
-        router.push('/admin#testimonials')
+        router.push('/#portfolio')
       } finally {
         setLoading(false)
       }
     }
 
     if (params.id) {
-      fetchTestimonial()
+      fetchPortfolio()
     }
   }, [params.id, router])
 
   const handleSuccess = () => {
-    router.push('/admin#testimonials')
+    router.push('/#portfolio')
   }
 
   const handleClose = () => {
-    router.push('/admin#testimonials')
+    router.push('/#portfolio')
   }
 
   if (loading) {
@@ -77,11 +77,11 @@ export default function EditTestimonialPage() {
                 className="flex items-center gap-2 mb-6"
               >
                 <ArrowLeft className="h-4 w-4" />
-                Back to Testimonials
+                Back to Portfolios
               </Button>
               <div className="text-center">
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Edit Testimonial</h1>
-                <p className="text-gray-600 dark:text-gray-400">Loading testimonial details...</p>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Edit Portfolio</h1>
+                <p className="text-gray-600 dark:text-gray-400">Loading portfolio details...</p>
               </div>
             </div>
             <Card className="shadow-lg">
@@ -110,21 +110,21 @@ export default function EditTestimonialPage() {
               className="flex items-center gap-2 mb-6"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back to Testimonials
+              Back to Portfolios
             </Button>
             <div className="text-center">
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Edit Testimonial</h1>
-              <p className="text-gray-600 dark:text-gray-400">Update testimonial details</p>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Edit Portfolio</h1>
+              <p className="text-gray-600 dark:text-gray-400">Update portfolio project details</p>
             </div>
           </div>
 
           {/* Form */}
           <Card className="shadow-lg">
             <CardContent className="p-6">
-              <TestimonialForm
+              <PortfolioForm
                 onClose={handleClose}
                 onSuccess={handleSuccess}
-                testimonial={testimonial || undefined}
+                portfolio={portfolio || undefined}
                 isEdit={true}
               />
             </CardContent>

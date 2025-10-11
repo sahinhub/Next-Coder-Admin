@@ -38,7 +38,7 @@ export default function LoginPage() {
       .then(res => res.json())
       .then(data => {
         if (data.success) {
-          router.push('/admin')
+          router.push('/')
         }
       })
       .catch(() => {
@@ -70,7 +70,7 @@ export default function LoginPage() {
         
         showSuccessToast(`Welcome back, ${data.user.username}!`)
         
-        router.push('/admin')
+        router.push('/')
       } else {
         // Show error toast without throwing console error
         toast.error(data.error || 'Invalid email or password', {
@@ -166,7 +166,7 @@ export default function LoginPage() {
         
         showSuccessToast(`Welcome, ${data.user.username}! Your admin account has been created.`, 4000)
         
-        router.push('/admin')
+        router.push('/')
       } else {
         // Show error toast without throwing console error
         toast.error(data.error || 'Registration failed', {

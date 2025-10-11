@@ -465,9 +465,6 @@ export function CareerForm({ onClose, job, isEdit = false, onSuccess }: CareerFo
                           </div>
                         </div>
                       </FormControl>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Date is automatically set to current date when creating a new job posting
-                      </p>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -558,7 +555,7 @@ export function CareerForm({ onClose, job, isEdit = false, onSuccess }: CareerFo
                     <div key={resp} className="flex items-center gap-1 bg-green-100 text-green-800 px-2 py-1 rounded text-sm">
                       {resp}
                       <X 
-                        className="w-3 h-3 cursor-pointer" 
+                        className="w-3 h-3 cursor-pointer hover:text-red-500 transition-colors" 
                         onClick={() => removeItem('responsibility', resp)}
                       />
                     </div>
@@ -585,7 +582,7 @@ export function CareerForm({ onClose, job, isEdit = false, onSuccess }: CareerFo
                     <div key={skill} className="flex items-center gap-1 bg-purple-100 text-purple-800 px-2 py-1 rounded text-sm">
                       {skill}
                       <X 
-                        className="w-3 h-3 cursor-pointer" 
+                        className="w-3 h-3 cursor-pointer hover:text-red-500 transition-colors" 
                         onClick={() => removeItem('skill', skill)}
                       />
                     </div>

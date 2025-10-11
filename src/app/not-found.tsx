@@ -29,7 +29,7 @@ export default function NotFound() {
                 </Link>
               </Button>
               <Button asChild variant="outline" className="w-full">
-                <Link href="/admin">
+                <Link href="/">
                   Go to Admin
                 </Link>
               </Button>

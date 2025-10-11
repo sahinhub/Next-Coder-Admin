@@ -68,7 +68,7 @@ export default function SignUpPage() {
       
       localStorage.setItem('admin_token', 'demo_token_' + Date.now())
       localStorage.setItem('admin_user', JSON.stringify(newUser))
-      router.push('/admin')
+      router.push('/')
     } catch {
       setError('Sign up failed. Please try again.')
     } finally {

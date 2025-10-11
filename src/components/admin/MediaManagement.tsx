@@ -262,6 +262,13 @@ export function MediaManagement({ onUploadSuccess }: MediaManagementProps) {
 
   // Cloudinary sync functions
   const syncWithCloudinary = async () => {
+    // Check if user is authenticated before attempting sync
+    const token = localStorage.getItem('admin-token')
+    if (!token) {
+      console.log('User not authenticated, skipping Cloudinary sync')
+      return
+    }
+
     setIsSyncing(true)
     try {
       // Fetch all media from Cloudinary (not just portfolios)
@@ -276,12 +283,23 @@ export function MediaManagement({ onUploadSuccess }: MediaManagementProps) {
       // Silently sync media items from Cloudinary
     } catch (error) {
       console.error('Error syncing with Cloudinary:', error)
+      // Don't show error to user if it's just an authentication issue
+      if (error instanceof Error && error.message === 'Authentication required') {
+        console.log('Authentication required for Cloudinary sync')
+      }
     } finally {
       setIsSyncing(false)
     }
   }
 
   const searchCloudinaryMediaQuery = async (query: string) => {
+    // Check if user is authenticated before attempting search
+    const token = localStorage.getItem('admin-token')
+    if (!token) {
+      console.log('User not authenticated, skipping Cloudinary search')
+      return
+    }
+
     setIsSyncing(true)
     try {
       // Search all media from Cloudinary
@@ -295,6 +313,10 @@ export function MediaManagement({ onUploadSuccess }: MediaManagementProps) {
       // Silently search media items from Cloudinary
     } catch (error) {
       console.error('Error searching Cloudinary:', error)
+      // Don't show error to user if it's just an authentication issue
+      if (error instanceof Error && error.message === 'Authentication required') {
+        console.log('Authentication required for Cloudinary search')
+      }
     } finally {
       setIsSyncing(false)
     }
@@ -305,6 +327,13 @@ export function MediaManagement({ onUploadSuccess }: MediaManagementProps) {
     let isMounted = true
     
     const initializeSync = async () => {
+      // Check authentication before starting sync
+      const token = localStorage.getItem('admin-token')
+      if (!token) {
+        console.log('User not authenticated, skipping media initialization')
+        return
+      }
+
       // Start with Cloudinary sync for all media
       if (isMounted) {
         await syncWithCloudinary()
@@ -413,6 +442,13 @@ export function MediaManagement({ onUploadSuccess }: MediaManagementProps) {
   // Handle actual deletion (both single and bulk)
   const handleConfirmDelete = async () => {
     if (!deleteItem && selectedItems.length === 0) return
+
+    // Check authentication before attempting deletion
+    const token = localStorage.getItem('admin-token')
+    if (!token) {
+      toast.error('Authentication required to delete media')
+      return
+    }
 
     setIsDeleting(true)
     try {

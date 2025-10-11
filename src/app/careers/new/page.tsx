@@ -10,11 +10,11 @@ export default function NewCareerPage() {
   const router = useRouter()
 
   const handleSuccess = () => {
-    router.push('/admin#careers')
+    router.push('/#careers')
   }
 
   const handleClose = () => {
-    router.push('/admin#careers')
+    router.push('/#careers')
   }
 
   return (

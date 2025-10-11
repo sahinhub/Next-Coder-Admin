@@ -11,7 +11,6 @@ import {
   Save,
   Loader2,
   Globe,
-  User,
   Bell,
   Shield,
   Eye
@@ -255,69 +254,6 @@ export function Settings({
           </CardContent>
         </Card>
 
-        {/* Account Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <User className="w-5 h-5" />
-              <span>Account</span>
-            </CardTitle>
-            <CardDescription>Manage your account information</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Full Name</label>
-              <Input
-                value={settings.account.fullName}
-                onChange={(e) => onUpdateSettings('account', 'fullName', e.target.value)}
-                className="mt-1 bg-gray-100 dark:bg-gray-800 dark:border-gray-600 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
-              <Input
-                type="email"
-                value={settings.account.email}
-                onChange={(e) => onUpdateSettings('account', 'email', e.target.value)}
-                className="mt-1 bg-gray-100 dark:bg-gray-800 dark:border-gray-600 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Username</label>
-              <Input
-                value={settings.account.username}
-                onChange={(e) => onUpdateSettings('account', 'username', e.target.value)}
-                className="mt-1 bg-gray-100 dark:bg-gray-800 dark:border-gray-600 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Bio</label>
-              <textarea
-                value={settings.account.bio}
-                onChange={(e) => onUpdateSettings('account', 'bio', e.target.value)}
-                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 bg-gray-100 dark:bg-gray-800 dark:border-gray-600 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
-                rows={3}
-              />
-            </div>
-            <Button
-              onClick={() => onSaveSettings('account')}
-              disabled={isSaving}
-              className="w-full"
-            >
-              {isSaving ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4 mr-2" />
-                  Save Account Settings
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
 
         {/* Notifications Settings */}
         <Card>

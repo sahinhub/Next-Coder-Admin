@@ -10,11 +10,11 @@ export default function NewPortfolioPage() {
   const router = useRouter()
 
   const handleSuccess = () => {
-    router.push('/admin#portfolio')
+    router.push('/#portfolio')
   }
 
   const handleClose = () => {
-    router.push('/admin#portfolio')
+    router.push('/#portfolio')
   }
 
   return (

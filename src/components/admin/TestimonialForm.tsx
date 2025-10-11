@@ -23,7 +23,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import { X, Save, Star, Calendar, Info, Image as ImageIcon } from 'lucide-react'
+import { X, Save, Star, Calendar, Image as ImageIcon } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { testimonialsApi, type Testimonial } from '@/lib/api'
 import { showSuccessToast } from '@/lib/utils'
@@ -472,10 +472,6 @@ export function TestimonialForm({ onClose, testimonial, isEdit = false, onSucces
                         </div>
                       </FormControl>
                       
-                      <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-                        <Info className="h-4 w-4" />
-                        <span>Date is automatically set to today when creating a new testimonial</span>
-                      </div>
                     </div>
                     <FormMessage />
                   </FormItem>
