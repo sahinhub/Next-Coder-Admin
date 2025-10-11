@@ -24,6 +24,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { X, Save, Star, Calendar, Info, Image as ImageIcon } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 import { testimonialsApi, type Testimonial } from '@/lib/api'
 import { showSuccessToast } from '@/lib/utils'
 
@@ -51,6 +52,8 @@ export function TestimonialForm({ onClose, testimonial, isEdit = false, onSucces
   const [clientImage, setClientImage] = useState<string>('')
   const [showMediaPicker, setShowMediaPicker] = useState(false)
   const [mediaPickerType, setMediaPickerType] = useState<'image' | 'video' | 'audio' | 'all'>('image')
+  const [isDraft, setIsDraft] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
 
   // Handle opening animation
   useEffect(() => {
@@ -96,46 +99,37 @@ export function TestimonialForm({ onClose, testimonial, isEdit = false, onSucces
 
   // Auto-save draft functionality
   useEffect(() => {
-    if (isEdit) return // Don't auto-save when editing existing testimonial
+    const saveDraft = async () => {
+      setIsSaving(true)
+      const formData = form.getValues()
+      const draftData = {
+        ...formData,
+        clientImage,
+        isDraft: true,
+        status: 'draft',
+        lastSaved: new Date().toISOString()
+      }
+      localStorage.setItem('testimonial-draft', JSON.stringify(draftData))
+      setIsDraft(true)
+      
+      // Show saving indicator briefly
+      setTimeout(() => setIsSaving(false), 1000)
+    }
 
-    const subscription = form.watch((data) => {
-      // Debounce auto-save
-      const timeoutId = setTimeout(() => {
-        if (data.name || data.review) {
-          const draftData = {
-            ...data,
-            clientImage,
-            status: 'draft',
-            lastSaved: new Date().toISOString()
-          }
-          localStorage.setItem('testimonial-draft', JSON.stringify(draftData))
-        }
-      }, 3000) // 3 second debounce
-
+    // Auto-save every 15 seconds
+    const interval = setInterval(saveDraft, 15000)
+    
+    // Save on form changes (debounced)
+    const subscription = form.watch(() => {
+      const timeoutId = setTimeout(saveDraft, 3000) // Debounce for 3 seconds
       return () => clearTimeout(timeoutId)
     })
 
-    // Auto-save every 15 seconds
-    const interval = setInterval(() => {
-      if (!isEdit) {
-        const formData = form.getValues()
-        if (formData.name || formData.review) {
-          const draftData = {
-            ...formData,
-            clientImage,
-            status: 'draft',
-            lastSaved: new Date().toISOString()
-          }
-          localStorage.setItem('testimonial-draft', JSON.stringify(draftData))
-        }
-      }
-    }, 15000)
-
     return () => {
-      subscription.unsubscribe()
       clearInterval(interval)
+      subscription.unsubscribe()
     }
-  }, [form, clientImage, isEdit])
+  }, [form, clientImage])
 
   // Load draft on component mount
   useEffect(() => {
@@ -143,18 +137,21 @@ export function TestimonialForm({ onClose, testimonial, isEdit = false, onSucces
     if (savedDraft && !isEdit) {
       try {
         const draftData = JSON.parse(savedDraft)
-        console.log('Loading testimonial draft:', draftData)
-        
-        form.reset({
-          name: draftData.name || '',
-          rating: draftData.rating || 5,
-          review: draftData.review || '',
-          clientImage: draftData.clientImage || '',
-          date: draftData.date || new Date().toISOString().split('T')[0],
-        })
-        
-        if (draftData.clientImage) {
-          setClientImage(draftData.clientImage)
+        if (draftData.isDraft) {
+          // Restore form data
+          form.reset({
+            name: draftData.name || '',
+            rating: draftData.rating || 5,
+            review: draftData.review || '',
+            clientImage: draftData.clientImage || '',
+            date: draftData.date || new Date().toISOString().split('T')[0],
+          })
+          
+          if (draftData.clientImage) {
+            setClientImage(draftData.clientImage)
+          }
+          setIsDraft(true)
+          // Draft restored from previous session
         }
       } catch (error) {
         console.error('Error loading testimonial draft:', error)
@@ -281,9 +278,21 @@ export function TestimonialForm({ onClose, testimonial, isEdit = false, onSucces
           <CardHeader className="border-b">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-xl">{isEdit ? 'Edit Testimonial' : 'Add New Testimonial'}</CardTitle>
+                <CardTitle className="text-xl flex items-center gap-2">
+                  {isEdit ? 'Edit Testimonial' : 'Add New Testimonial'}
+                  {isDraft && (
+                    <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800">
+                      Draft
+                    </Badge>
+                  )}
+                </CardTitle>
                 <CardDescription>
                   {isEdit ? 'Update testimonial information' : 'Create a new testimonial entry'}
+                  {isDraft && (
+                    <span className="block text-xs text-blue-600 dark:text-blue-400 mt-1">
+                      Auto-saved as draft
+                    </span>
+                  )}
                 </CardDescription>
               </div>
               <Button variant="outline" size="icon" onClick={handleClose}>
@@ -350,17 +359,19 @@ export function TestimonialForm({ onClose, testimonial, isEdit = false, onSucces
                   <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
                     Upload a photo of the client for the testimonial
                   </p>
-                  <ImageUpload
-                    onUploadSuccess={handleClientImageUpload}
-                    onUploadError={(error) => toast.error(error)}
-                    maxFiles={1}
-                    allowMultiple={false}
-                    maxSize={1024 * 1024} // 1MB
-                    className="mb-4"
-                    title="Upload Client Image"
-                    description="Drag and drop client image here, or click to browse"
-                    supportText="Supports: JPG, PNG (max 1MB) for client image"
-                  />
+                  {!clientImage && (
+                    <ImageUpload
+                      onUploadSuccess={handleClientImageUpload}
+                      onUploadError={(error) => toast.error(error)}
+                      maxFiles={1}
+                      allowMultiple={false}
+                      maxSize={1024 * 1024} // 1MB
+                      className="mb-4"
+                      title="Upload Client Image"
+                      description="Drag and drop client image here, or click to browse"
+                      supportText="Supports: JPG, PNG (max 1MB) for client image"
+                    />
+                  )}
                   {clientImage && (
                     <div className="mt-3">
                       <p className="text-sm font-medium text-gray-900 dark:text-white mb-2">Client Image:</p>
@@ -471,32 +482,32 @@ export function TestimonialForm({ onClose, testimonial, isEdit = false, onSucces
                 )}
               />
 
-              {/* Draft Status */}
-              {!isEdit && (form.getValues('name') || form.getValues('review')) && (
-                <div className="flex items-center justify-center text-sm text-gray-500 dark:text-gray-400">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                    <span>Saving draft...</span>
-                  </div>
-                </div>
-              )}
-
               {/* Action Buttons */}
               <div className=" pt-4 mt-6">
-                <div className="flex justify-end gap-4">
-                  <Button type="button" variant="outline" onClick={handleClose}>
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={isLoading}>
-                    {isLoading ? (
-                      'Saving...'
-                    ) : (
-                      <>
-                        <Save className="w-4 h-4 mr-2" />
-                        {isEdit ? 'Update Testimonial' : 'Create Testimonial'}
-                      </>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    {isDraft && (
+                      <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
+                        <div className={`w-2 h-2 rounded-full ${isSaving ? 'bg-yellow-500 animate-pulse' : 'bg-blue-500'}`}></div>
+                        {isSaving ? 'Saving draft...' : 'Auto-saved as draft'}
+                      </div>
                     )}
-                  </Button>
+                  </div>
+                  <div className="flex gap-4">
+                    <Button type="button" variant="outline" onClick={handleClose}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={isLoading}>
+                      {isLoading ? (
+                        'Saving...'
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4 mr-2" />
+                          {isEdit ? 'Update Testimonial' : 'Create Testimonial'}
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </form>

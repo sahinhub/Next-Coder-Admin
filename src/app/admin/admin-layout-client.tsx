@@ -96,7 +96,11 @@ export default function AdminLayoutClient() {
       weeklyReports: true,
       securityAlerts: true,
       newTestimonials: true,
-      newApplications: true
+      newApplications: true,
+      newPortfolioSubmissions: true,
+      newCareerApplications: true,
+      systemUpdates: true,
+      maintenanceAlerts: true
     },
     security: {
       twoFactorAuth: false,
@@ -105,20 +109,25 @@ export default function AdminLayoutClient() {
       loginAttempts: 5,
       ipWhitelist: [] as string[],
       loginAlerts: true
-    },
-    api: {
-      webhookUrl: '',
-      rateLimit: 1000,
-      enableCors: true,
-      debugMode: false
     }
   })
   const [isSaving, setIsSaving] = useState(false)
 
-  // Check if we're on the client side
+  // Check if we're on the client side and load settings
   useEffect(() => {
     setIsClient(true)
     setMounted(true)
+    
+    // Load settings from localStorage
+    const savedSettings = localStorage.getItem('admin-settings')
+    if (savedSettings) {
+      try {
+        const parsed = JSON.parse(savedSettings)
+        setSettings(parsed)
+      } catch (error) {
+        console.error('Error loading settings from localStorage:', error)
+      }
+    }
     
     // Check if mobile
     const checkMobile = () => {
@@ -416,7 +425,7 @@ export default function AdminLayoutClient() {
   }, [isClient])
 
   // Update settings function
-  const updateSettings = async (section: string, field: string, value: unknown) => {
+  const updateSettings = useCallback(async (section: string, field: string, value: unknown) => {
     const newSettings = {
       ...settings,
       [section]: {
@@ -430,7 +439,7 @@ export default function AdminLayoutClient() {
     if (isClient) {
       localStorage.setItem('admin-settings', JSON.stringify(newSettings))
     }
-  }
+  }, [settings, isClient])
 
   // Handle theme change
   const handleThemeChange = (checked: boolean) => {
@@ -442,6 +451,40 @@ export default function AdminLayoutClient() {
       document.documentElement.classList.remove('dark')
     }
   }
+
+  // Initialize theme from system preference
+  useEffect(() => {
+    if (isClient) {
+      // Check if user has manually set a preference
+      const savedSettings = localStorage.getItem('admin-settings')
+      if (savedSettings) {
+        try {
+          const parsed = JSON.parse(savedSettings)
+          if (parsed.display?.darkMode !== undefined) {
+            // User has manually set preference, use it
+            if (parsed.display.darkMode) {
+              document.documentElement.classList.add('dark')
+            } else {
+              document.documentElement.classList.remove('dark')
+            }
+            return
+          }
+        } catch (error) {
+          console.error('Error parsing saved settings:', error)
+        }
+      }
+      
+      // No manual preference, use system preference
+      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      if (systemPrefersDark) {
+        document.documentElement.classList.add('dark')
+        updateSettings('display', 'darkMode', true)
+      } else {
+        document.documentElement.classList.remove('dark')
+        updateSettings('display', 'darkMode', false)
+      }
+    }
+  }, [isClient, updateSettings])
 
   // Handle save settings
   const handleSaveSettings = async (section: string) => {
@@ -614,7 +657,11 @@ export default function AdminLayoutClient() {
             weeklyReports: true,
             securityAlerts: true,
             newTestimonials: true,
-            newApplications: true
+            newApplications: true,
+            newPortfolioSubmissions: true,
+            newCareerApplications: true,
+            systemUpdates: true,
+            maintenanceAlerts: true
           },
           security: {
             twoFactorAuth: false,

@@ -27,8 +27,10 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { X, Save, Plus, Image as ImageIcon } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 import { MediaPicker } from '@/components/ui/MediaPicker'
 import { DatePicker } from '@/components/ui/date-picker'
+import { Calendar } from 'lucide-react'
 import { type MediaItem } from '@/lib/cloudinaryApi'
 import { careersApi, type Career } from '@/lib/api'
 import { showSuccessToast } from '@/lib/utils'
@@ -67,6 +69,8 @@ export function CareerForm({ onClose, job, isEdit = false, onSuccess }: CareerFo
   const [isOpening, setIsOpening] = useState(true)
   const [showMediaPicker, setShowMediaPicker] = useState(false)
   const [mediaPickerType, setMediaPickerType] = useState<'image' | 'video' | 'audio' | 'all'>('image')
+  const [isDraft, setIsDraft] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
 
   // Handle opening animation
   useEffect(() => {
@@ -114,48 +118,38 @@ export function CareerForm({ onClose, job, isEdit = false, onSuccess }: CareerFo
 
   // Auto-save draft functionality
   useEffect(() => {
-    if (isEdit) return // Don't auto-save when editing existing career
+    const saveDraft = async () => {
+      setIsSaving(true)
+      const formData = form.getValues()
+      const draftData = {
+        ...formData,
+        responsibilities,
+        skills,
+        isDraft: true,
+        status: 'draft',
+        lastSaved: new Date().toISOString()
+      }
+      localStorage.setItem('career-draft', JSON.stringify(draftData))
+      setIsDraft(true)
+      
+      // Show saving indicator briefly
+      setTimeout(() => setIsSaving(false), 1000)
+    }
 
-    const subscription = form.watch((data) => {
-      // Debounce auto-save
-      const timeoutId = setTimeout(() => {
-        if (data.title || data.description) {
-          const draftData = {
-            ...data,
-            responsibilities,
-            skills,
-            status: 'draft',
-            lastSaved: new Date().toISOString()
-          }
-          localStorage.setItem('career-draft', JSON.stringify(draftData))
-        }
-      }, 3000) // 3 second debounce
-
+    // Auto-save every 15 seconds
+    const interval = setInterval(saveDraft, 15000)
+    
+    // Save on form changes (debounced)
+    const subscription = form.watch(() => {
+      const timeoutId = setTimeout(saveDraft, 3000) // Debounce for 3 seconds
       return () => clearTimeout(timeoutId)
     })
 
-    // Auto-save every 15 seconds
-    const interval = setInterval(() => {
-      if (!isEdit) {
-        const formData = form.getValues()
-        if (formData.title || formData.description) {
-          const draftData = {
-            ...formData,
-            responsibilities,
-            skills,
-            status: 'draft',
-            lastSaved: new Date().toISOString()
-          }
-          localStorage.setItem('career-draft', JSON.stringify(draftData))
-        }
-      }
-    }, 15000)
-
     return () => {
-      subscription.unsubscribe()
       clearInterval(interval)
+      subscription.unsubscribe()
     }
-  }, [form, responsibilities, skills, isEdit])
+  }, [form, responsibilities, skills])
 
   // Load draft on component mount
   useEffect(() => {
@@ -163,25 +157,29 @@ export function CareerForm({ onClose, job, isEdit = false, onSuccess }: CareerFo
     if (savedDraft && !isEdit) {
       try {
         const draftData = JSON.parse(savedDraft)
-        
-        form.reset({
-          title: draftData.title || '',
-          department: draftData.department || '',
-          location: draftData.location || '',
-          experienceRequired: draftData.experienceRequired || '',
-          employmentType: draftData.employmentType || 'Full-time',
-          description: draftData.description || '',
-          responsibilities: draftData.responsibilities || [],
-          skills: draftData.skills || [],
-          image: draftData.image || '',
-          postedDate: draftData.postedDate || new Date().toISOString().split('T')[0],
-          applicationDeadline: draftData.applicationDeadline || '',
-          status: draftData.status || 'active',
-        })
-        
-        // Load state arrays
-        setResponsibilities(draftData.responsibilities || [])
-        setSkills(draftData.skills || [])
+        if (draftData.isDraft) {
+          // Restore form data
+          form.reset({
+            title: draftData.title || '',
+            department: draftData.department || '',
+            location: draftData.location || '',
+            experienceRequired: draftData.experienceRequired || '',
+            employmentType: draftData.employmentType || 'Full-time',
+            description: draftData.description || '',
+            responsibilities: draftData.responsibilities || [],
+            skills: draftData.skills || [],
+            image: draftData.image || '',
+            postedDate: draftData.postedDate || new Date().toISOString().split('T')[0],
+            applicationDeadline: draftData.applicationDeadline || '',
+            status: draftData.status || 'active',
+          })
+          
+          // Load state arrays
+          setResponsibilities(draftData.responsibilities || [])
+          setSkills(draftData.skills || [])
+          setIsDraft(true)
+          // Draft restored from previous session
+        }
       } catch (error) {
         console.error('Error loading career draft:', error)
         localStorage.removeItem('career-draft')
@@ -303,9 +301,21 @@ export function CareerForm({ onClose, job, isEdit = false, onSuccess }: CareerFo
           <CardHeader className="border-b">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-xl">{isEdit ? 'Edit Job Posting' : 'Add New Job Posting'}</CardTitle>
+                <CardTitle className="text-xl flex items-center gap-2">
+                  {isEdit ? 'Edit Job Posting' : 'Add New Job Posting'}
+                  {isDraft && (
+                    <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800">
+                      Draft
+                    </Badge>
+                  )}
+                </CardTitle>
                 <CardDescription>
                   {isEdit ? 'Update job posting information' : 'Create a new job posting'}
+                  {isDraft && (
+                    <span className="block text-xs text-blue-600 dark:text-blue-400 mt-1">
+                      Auto-saved as draft
+                    </span>
+                  )}
                 </CardDescription>
               </div>
               <Button variant="outline" size="icon" onClick={handleClose}>
@@ -437,12 +447,27 @@ export function CareerForm({ onClose, job, isEdit = false, onSuccess }: CareerFo
                     <FormItem>
                       <FormLabel>Posted Date</FormLabel>
                       <FormControl>
-                        <DatePicker
-                          value={field.value ? new Date(field.value) : undefined}
-                          onChange={(date) => field.onChange(date?.toISOString().split('T')[0])}
-                          placeholder="Select posted date"
-                        />
+                        <div className="relative">
+                          <Input 
+                            type="text"
+                            value={field.value ? new Date(field.value).toLocaleDateString('en-US', { 
+                              year: 'numeric', 
+                              month: 'long', 
+                              day: 'numeric' 
+                            }) : ''}
+                            readOnly
+                            disabled
+                            className="pl-10 pr-4 py-3 text-sm border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 cursor-not-allowed"
+                            placeholder="Date will be set automatically"
+                          />
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Calendar className="h-5 w-5 text-gray-400" />
+                          </div>
+                        </div>
                       </FormControl>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Date is automatically set to current date when creating a new job posting
+                      </p>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -595,32 +620,33 @@ export function CareerForm({ onClose, job, isEdit = false, onSuccess }: CareerFo
                 />
               </div>
 
-              {/* Draft Status */}
-              {!isEdit && (form.getValues('title') || form.getValues('description')) && (
-                <div className="flex items-center justify-center text-sm text-gray-500 dark:text-gray-400">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                    <span>Saving draft...</span>
-                  </div>
-                </div>
-              )}
 
               {/* Action Buttons */}
               <div className=" pt-4 mt-6">
-                <div className="flex justify-end gap-4">
-                  <Button type="button" variant="outline" onClick={handleClose}>
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={isLoading}>
-                    {isLoading ? (
-                      'Saving...'
-                    ) : (
-                      <>
-                        <Save className="w-4 h-4 mr-2" />
-                        {isEdit ? 'Update Job Posting' : 'Create Job Posting'}
-                      </>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    {isDraft && (
+                      <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
+                        <div className={`w-2 h-2 rounded-full ${isSaving ? 'bg-yellow-500 animate-pulse' : 'bg-blue-500'}`}></div>
+                        {isSaving ? 'Saving draft...' : 'Auto-saved as draft'}
+                      </div>
                     )}
-                  </Button>
+                  </div>
+                  <div className="flex gap-4">
+                    <Button type="button" variant="outline" onClick={handleClose}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={isLoading}>
+                      {isLoading ? (
+                        'Saving...'
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4 mr-2" />
+                          {isEdit ? 'Update Job Posting' : 'Create Job Posting'}
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </form>

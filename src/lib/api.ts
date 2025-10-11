@@ -1,5 +1,56 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://nextcoderapi.vercel.app'
 
+// User API
+export const userApi = {
+  // Update user profile
+  async updateProfile(userData: {
+    username?: string
+    email?: string
+    fullName?: string
+    bio?: string
+    location?: string
+    website?: string
+  }) {
+    const token = localStorage.getItem('admin-token')
+    const response = await fetch(`${API_BASE_URL}/user/profile`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      },
+      body: JSON.stringify(userData)
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to update profile: ${response.statusText}`)
+    }
+
+    return response.json()
+  },
+
+  // Change password
+  async changePassword(passwordData: {
+    currentPassword: string
+    newPassword: string
+  }) {
+    const token = localStorage.getItem('admin-token')
+    const response = await fetch(`${API_BASE_URL}/user/change-password`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      },
+      body: JSON.stringify(passwordData)
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to change password: ${response.statusText}`)
+    }
+
+    return response.json()
+  }
+}
+
 // Projects API (Portfolio)
 export const projectsApi = {
   // Get all projects

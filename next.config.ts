@@ -18,6 +18,25 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   generateEtags: false,
   
+  // Rewrites to make admin accessible at root domain
+  async rewrites() {
+    return [
+      {
+        source: '/',
+        destination: '/admin',
+      },
+      // Keep login and signup at their original paths
+      {
+        source: '/login',
+        destination: '/login',
+      },
+      {
+        source: '/signup',
+        destination: '/signup',
+      },
+    ]
+  },
+
   // Security headers
   async headers() {
     return [

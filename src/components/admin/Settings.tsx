@@ -14,7 +14,6 @@ import {
   User,
   Bell,
   Shield,
-  Database,
   Eye
 } from 'lucide-react'
 
@@ -49,6 +48,10 @@ interface SettingsData {
     securityAlerts: boolean
     newTestimonials: boolean
     newApplications: boolean
+    newPortfolioSubmissions: boolean
+    newCareerApplications: boolean
+    systemUpdates: boolean
+    maintenanceAlerts: boolean
   }
   security: {
     twoFactorAuth: boolean
@@ -57,12 +60,6 @@ interface SettingsData {
     loginAttempts: number
     ipWhitelist: string[]
     loginAlerts: boolean
-  }
-  api: {
-    webhookUrl: string
-    rateLimit: number
-    enableCors: boolean
-    debugMode: boolean
   }
 }
 
@@ -225,21 +222,6 @@ export function Settings({
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Show Analytics</label>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Display analytics dashboard</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={settings.display.showAnalytics}
-                  onChange={(e) => onUpdateSettings('display', 'showAnalytics', e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 dark:peer-focus:ring-green-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-green-600"></div>
-              </label>
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Auto Save</label>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Automatically save changes</p>
               </div>
@@ -377,6 +359,66 @@ export function Settings({
                 <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 dark:peer-focus:ring-green-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-green-600"></div>
               </label>
             </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">New Portfolio Submissions</label>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Get notified when new portfolios are submitted</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={settings.notifications.newPortfolioSubmissions}
+                  onChange={(e) => onUpdateSettings('notifications', 'newPortfolioSubmissions', e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 dark:peer-focus:ring-green-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-green-600"></div>
+              </label>
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">New Career Applications</label>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Get notified when new job applications are received</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={settings.notifications.newCareerApplications}
+                  onChange={(e) => onUpdateSettings('notifications', 'newCareerApplications', e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 dark:peer-focus:ring-green-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-green-600"></div>
+              </label>
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">System Updates</label>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Get notified about system updates and new features</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={settings.notifications.systemUpdates}
+                  onChange={(e) => onUpdateSettings('notifications', 'systemUpdates', e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 dark:peer-focus:ring-green-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-green-600"></div>
+              </label>
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Maintenance Alerts</label>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Get notified about scheduled maintenance</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={settings.notifications.maintenanceAlerts}
+                  onChange={(e) => onUpdateSettings('notifications', 'maintenanceAlerts', e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 dark:peer-focus:ring-green-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-green-600"></div>
+              </label>
+            </div>
             <Button
               onClick={() => onSaveSettings('notifications')}
               disabled={isSaving}
@@ -453,56 +495,6 @@ export function Settings({
           </CardContent>
         </Card>
 
-        {/* API Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Database className="w-5 h-5" />
-              <span>API</span>
-            </CardTitle>
-            <CardDescription>Configure API settings and integrations</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Webhook URL</label>
-              <Input
-                type="url"
-                value={settings.api.webhookUrl}
-                onChange={(e) => onUpdateSettings('api', 'webhookUrl', e.target.value)}
-                className="mt-1 bg-gray-100 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-                placeholder="https://example.com/webhook"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Rate Limit (requests per hour)</label>
-              <Input
-                type="number"
-                min="100"
-                max="10000"
-                value={settings.api.rateLimit}
-                onChange={(e) => onUpdateSettings('api', 'rateLimit', parseInt(e.target.value))}
-                className="mt-1 bg-gray-100 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-              />
-            </div>
-            <Button
-              onClick={() => onSaveSettings('api')}
-              disabled={isSaving}
-              className="w-full"
-            >
-              {isSaving ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4 mr-2" />
-                  Save API Settings
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
       </div>
     </div>
   )

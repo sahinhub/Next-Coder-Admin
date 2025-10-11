@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
+import { userApi } from '@/lib/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,7 +14,7 @@ import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 
 export default function AccountPage() {
-  const { user, changePassword, logout } = useAuth()
+  const { user, logout } = useAuth()
   const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
   const [isChangingPassword, setIsChangingPassword] = useState(false)
@@ -59,8 +60,16 @@ export default function AccountPage() {
   const handleSaveProfile = async () => {
     setIsLoading(true)
     try {
-      // Here you would typically make an API call to update the profile
-      // For now, we'll just show a success message
+      // Make API call to update the profile
+      await userApi.updateProfile({
+        username: formData.username,
+        email: formData.email,
+        fullName: formData.fullName,
+        bio: formData.bio,
+        location: formData.location,
+        website: formData.website
+      })
+      
       toast.success('Profile updated successfully!', {
         duration: 3000,
         position: 'bottom-right',
@@ -76,7 +85,8 @@ export default function AccountPage() {
         },
       })
       setIsEditing(false)
-    } catch {
+    } catch (error) {
+      console.error('Error updating profile:', error)
       toast.error('Failed to update profile. Please try again.', {
         duration: 4000,
         position: 'bottom-right',
@@ -129,29 +139,30 @@ export default function AccountPage() {
 
     setIsLoading(true)
     try {
-      const success = await changePassword(passwordData.currentPassword, passwordData.newPassword)
+      // Use the new API instead of the auth hook
+      await userApi.changePassword({
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword
+      })
       
-      if (success) {
-        toast.success('Password changed successfully!', {
-          duration: 3000,
-          position: 'bottom-right',
-          style: {
-            background: document.documentElement.classList.contains('dark') 
-              ? 'rgba(9, 222, 66,0.3)' 
-              : '#09de42',
-            color: '#fff',
-            borderRadius: '8px',
-            padding: '12px 16px',
-            fontSize: '14px',
-            fontWeight: '500',
-          },
-        })
-        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' })
-        setIsChangingPassword(false)
-      } else {
-        throw new Error('Failed to change password')
-      }
-    } catch {
+      toast.success('Password changed successfully!', {
+        duration: 3000,
+        position: 'bottom-right',
+        style: {
+          background: document.documentElement.classList.contains('dark') 
+            ? 'rgba(9, 222, 66,0.3)' 
+            : '#09de42',
+          color: '#fff',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          fontSize: '14px',
+          fontWeight: '500',
+        },
+      })
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' })
+      setIsChangingPassword(false)
+    } catch (error) {
+      console.error('Error changing password:', error)
       toast.error('Failed to change password. Please check your current password and try again.', {
         duration: 4000,
         position: 'bottom-right',
@@ -332,7 +343,7 @@ export default function AccountPage() {
                     <div>
                       <h4 className="font-medium">Password</h4>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Last changed: {(user as unknown as Record<string, unknown>).lastPasswordChange ? new Date((user as unknown as Record<string, unknown>).lastPasswordChange as string).toLocaleDateString() : 'Unknown'}
+                        Last changed: {(user as unknown as Record<string, unknown>).lastPasswordChange ? new Date((user as unknown as Record<string, unknown>).lastPasswordChange as string).toLocaleDateString() : '--'}
                       </p>
                     </div>
                     <Button onClick={() => setIsChangingPassword(true)}>
@@ -446,13 +457,13 @@ export default function AccountPage() {
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-600 dark:text-gray-400">Member since</span>
                     <span className="text-sm font-medium">
-                      {(user as unknown as Record<string, unknown>).createdAt ? new Date((user as unknown as Record<string, unknown>).createdAt as string).toLocaleDateString() : 'Unknown'}
+                      {(user as unknown as Record<string, unknown>).createdAt ? new Date((user as unknown as Record<string, unknown>).createdAt as string).toLocaleDateString() : '--'}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-600 dark:text-gray-400">Last login</span>
                     <span className="text-sm font-medium">
-                      {user?.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Unknown'}
+                      {user?.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : '--'}
                     </span>
                   </div>
                   <div className="flex justify-between">

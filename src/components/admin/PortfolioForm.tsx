@@ -22,7 +22,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { ImageUpload } from '@/components/ui/ImageUpload'
 import { MediaPicker } from '@/components/ui/MediaPicker'
-import { DatePicker } from '@/components/ui/date-picker'
+import { Calendar } from 'lucide-react'
 import { X, Plus, Save, Image as ImageIcon } from 'lucide-react'
 import { type ImageUploadResponse } from '@/lib/imageUpload'
 import { projectsApi, type Project } from '@/lib/api'
@@ -881,12 +881,27 @@ export function PortfolioForm({ onClose, portfolio, isEdit = false, onSuccess }:
                     <FormItem>
                       <FormLabel>Publish Date</FormLabel>
                       <FormControl>
-                        <DatePicker
-                          value={field.value ? new Date(field.value) : undefined}
-                          onChange={(date) => field.onChange(date?.toISOString().split('T')[0])}
-                          placeholder="Select publish date"
-                        />
+                        <div className="relative">
+                          <Input 
+                            type="text"
+                            value={field.value ? new Date(field.value).toLocaleDateString('en-US', { 
+                              year: 'numeric', 
+                              month: 'long', 
+                              day: 'numeric' 
+                            }) : ''}
+                            readOnly
+                            disabled
+                            className="pl-10 pr-4 py-3 text-sm border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 cursor-not-allowed"
+                            placeholder="Date will be set automatically"
+                          />
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Calendar className="h-5 w-5 text-gray-400" />
+                          </div>
+                        </div>
                       </FormControl>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Date is automatically set to current date when creating a new portfolio
+                      </p>
                       <FormMessage />
                     </FormItem>
                   )}
